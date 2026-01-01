@@ -27,3 +27,5 @@ logs
 .wrangler
 .dev.vars*
 !.dev.vars.example
+
+.vscode
