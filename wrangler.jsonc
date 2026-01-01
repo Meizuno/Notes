@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "note",
+	"name": "notes",
 	"main": "./.output/server/index.mjs",
 	"compatibility_date": "2026-01-01",
 	"assets": {
