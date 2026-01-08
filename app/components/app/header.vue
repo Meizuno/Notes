@@ -54,7 +54,7 @@ const googleLogin = () => {
 };
 
 const logout = () => {
-  navigateTo("/");
+  navigateTo("/login");
   clear();
 };
 

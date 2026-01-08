@@ -30,4 +30,13 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  icon: {
+    customCollections: [
+      {
+        prefix: "notes",
+        dir: "./app/assets/icons",
+      },
+    ],
+  },
 });

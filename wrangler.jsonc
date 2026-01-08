@@ -17,8 +17,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "notes",
-			"database_id": "9c55d3cf-db31-4472-9021-d0e4f4b6871f",
+			"database_name": "notes-storage",
+			"database_id": "4f99584a-59c9-407b-911b-1554eae9d17b",
 			"migrations_table": "migrations",
 			"migrations_dir": "migrations"
 		}

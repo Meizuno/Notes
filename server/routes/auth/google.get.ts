@@ -2,7 +2,7 @@ export default defineOAuthGoogleEventHandler({
   async onSuccess(event, { user }) {
     const { cloudflare } = event.context;
     const userDB = await cloudflare.env.DB.prepare(
-      "SELECT id FROM user WHERE email = ?"
+      "SELECT id FROM users WHERE email = ?"
     )
       .bind(user.email)
       .first();
