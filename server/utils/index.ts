@@ -1,8 +1,8 @@
-import type { Item } from "~/types/item";
+import type { ItemType } from "~/types/item";
 
-export const buildTree = (items: Item[]): Item[] => {
-  const map = new Map<number, Item>();
-  const roots: Item[] = [];
+export const buildTree = (items: ItemType[]): ItemType[] => {
+  const map = new Map<number, ItemType>();
+  const roots: ItemType[] = [];
 
   items.forEach((item) => map.set(item.id, { ...item, children: [] }));
 

@@ -1,21 +1,24 @@
 <template>
   <div class="h-full">
-    <div v-if="items.length > 0" class="h-full flex flex-col justify-between">
+    <div
+      v-if="data && data.length > 0"
+      class="h-full flex flex-col justify-between relative"
+    >
       <UTree
-        :items="items"
+        :items="data"
         size="xl"
         expanded-icon="i-lucide-book-open"
         collapsed-icon="i-lucide-book"
+        @select="onSelect"
       />
 
-      <div class="w-full flex justify-center">
-        <UButton
-          variant="subtle"
-          icon="i-material-symbols-add-rounded"
-          color="neutral"
-          class="max-w-xs w-full justify-center"
-        />
-      </div>
+      <UButton
+        variant="subtle"
+        icon="i-material-symbols-add-rounded"
+        color="neutral"
+        size="xl"
+        class="sticky bottom-4 rounded-full w-fit ml-auto"
+      />
     </div>
     <div v-else class="h-full flex justify-center items-center">
       <UEmpty
@@ -39,45 +42,14 @@
 </template>
 
 <script setup lang="ts">
-const items = ref([
-  {
-    label: "app/",
-    children: [
-      {
-        label: "composables/",
-        children: [
-          {
-            label: "useAuth.ts",
-            icon: "i-lucide-file",
-          },
-          {
-            label: "useUser.ts",
-            icon: "i-lucide-file",
-          },
-        ],
-      },
-      {
-        label: "components/",
-        children: [
-          {
-            label: "Card.vue",
-            icon: "i-lucide-file",
-          },
-          {
-            label: "Button.vue",
-            icon: "i-lucide-file",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    label: "app.vue",
-    icon: "i-lucide-file",
-  },
-  {
-    label: "nuxt.config.ts",
-    icon: "i-lucide-file",
-  },
-]);
+import type { TreeItemSelectEvent } from "reka-ui";
+import type { TreeItem } from "@nuxt/ui";
+
+const { data } = await useFetch("/api/items");
+
+const onSelect = (e: TreeItemSelectEvent<TreeItem>) => {
+  if (e.detail.value && e.detail.value.type == "markdown") {
+    navigateTo(`files/${e.detail.value.id}/content`);
+  }
+};
 </script>
