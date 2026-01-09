@@ -28,4 +28,22 @@ definePageMeta({
 const googleLogin = () => {
   window.location.href = "/auth/google";
 };
+
+const toast = useToast();
+const route = useRoute();
+
+onMounted(() => {
+  if (route.query && route.query.error == "USER_NOT_FOUND") {
+    toast.add({
+      title: "Access denied!",
+      icon: "i-mdi-anonymous",
+      progress: false,
+      color: "error",
+      class: "bg-error/15 ring-error",
+      close: false,
+      duration: 2000,
+    });
+    navigateTo("/login", { replace: true });
+  }
+});
 </script>

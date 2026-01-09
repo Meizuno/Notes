@@ -8,7 +8,7 @@ export default defineOAuthGoogleEventHandler({
       .first();
 
     if (!userDB) {
-      return sendRedirect(event, "/?error=USER_NOT_FOUND");
+      return sendRedirect(event, "/login?error=USER_NOT_FOUND");
     }
 
     await setUserSession(event, {
