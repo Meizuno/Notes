@@ -1,5 +1,5 @@
 <template>
-  <UHeader class="p-2">
+  <UHeader class="p-2" :toggle="false">
     <template #title>
       <div class="flex gap-2 items-center">
         <Icon name="i-emojione-v1-note-pad" class="size-7" />
