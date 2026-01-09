@@ -1,5 +1,3 @@
-import type { ItemType } from "~/types/item";
-
 export const buildTree = (items: ItemType[]): ItemType[] => {
   const map = new Map<number, ItemType>();
   const roots: ItemType[] = [];
@@ -17,4 +15,4 @@ export const buildTree = (items: ItemType[]): ItemType[] => {
   });
 
   return roots;
-}
+};

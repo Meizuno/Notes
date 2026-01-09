@@ -1,9 +1,9 @@
 <template>
-  <UHeader class="p-2" :toggle="false">
+  <UHeader :toggle="false">
     <template #title>
       <div class="flex gap-2 items-center">
         <Icon name="i-emojione-v1-note-pad" class="size-7" />
-        <span class="text-2xl">Notes</span>
+        <span class="text-xl hidden xs:block">Notes</span>
       </div>
     </template>
 
@@ -11,7 +11,6 @@
       <div v-if="user" class="flex">
         <UUser
           :name="user.name"
-          size="xl"
           :avatar="{
             src: user.photo,
             icon: 'i-lucide-image',
@@ -23,23 +22,10 @@
             variant="ghost"
             icon="i-material-symbols-logout"
             aria-label="Logout"
-            size="xl"
             @click="logout"
           />
         </UTooltip>
       </div>
-
-      <UTooltip v-else :delay-duration="0" text="Login with google">
-        <UButton
-          color="primary"
-          icon="i-flat-color-icons-google"
-          aria-label="Google"
-          size="xl"
-          @click="googleLogin"
-        >
-          Login
-        </UButton>
-      </UTooltip>
     </template>
   </UHeader>
 </template>
@@ -48,10 +34,6 @@
 const { user, clear } = useUserSession();
 const route = useRoute();
 const toast = useToast();
-
-const googleLogin = () => {
-  window.location.href = "/auth/google";
-};
 
 const logout = () => {
   navigateTo("/login");

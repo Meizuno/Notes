@@ -31,10 +31,6 @@ export default defineNuxtConfig({
     },
   },
 
-  imports: {
-    dirs: ["types"],
-  },
-
   icon: {
     customCollections: [
       {

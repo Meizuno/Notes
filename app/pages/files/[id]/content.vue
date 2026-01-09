@@ -5,9 +5,9 @@
       v-model="content"
       :editable="editable"
       content-type="markdown"
-      class="w-full min-h-21"
+      class="w-full"
     />
-    <div class="sticky bottom-4 w-fit ml-auto">
+    <div class="fixed bottom-4 right-4 w-fit ml-auto">
       <div v-if="editable" class="flex gap-4">
         <UButton
           variant="subtle"

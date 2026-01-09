@@ -2,10 +2,11 @@
   <div class="h-full">
     <div
       v-if="data && data.length > 0"
-      class="h-full flex flex-col justify-between relative"
+      class="h-full flex flex-col justify-between"
     >
       <UTree
         :items="data"
+        :get-key="i => String(i.id)"
         size="xl"
         expanded-icon="i-lucide-book-open"
         collapsed-icon="i-lucide-book"
@@ -17,7 +18,7 @@
         icon="i-material-symbols-add-rounded"
         color="neutral"
         size="xl"
-        class="sticky bottom-4 rounded-full w-fit ml-auto"
+        class="fixed bottom-4 rounded-full w-fit ml-auto"
       />
     </div>
     <div v-else class="h-full flex justify-center items-center">
