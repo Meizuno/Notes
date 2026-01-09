@@ -18,7 +18,7 @@
         icon="i-material-symbols-add-rounded"
         color="neutral"
         size="xl"
-        class="fixed bottom-4 rounded-full w-fit ml-auto"
+        class="fixed bottom-4 right-4 rounded-full w-fit ml-auto"
       />
     </div>
     <div v-else class="h-full flex justify-center items-center">

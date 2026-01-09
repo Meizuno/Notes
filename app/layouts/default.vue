@@ -1,5 +1,5 @@
 <template>
-  <UContainer class="h-full flex flex-col gap-4 relative">
+  <UContainer class="h-full flex flex-col relative">
     <AppHeader />
     <UMain>
       <slot />
