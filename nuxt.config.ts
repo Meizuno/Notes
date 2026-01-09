@@ -29,6 +29,11 @@ export default defineNuxtConfig({
         clientSecret: "...",
       },
     },
+    githubToken: "",
+  },
+
+  imports: {
+    dirs: ["types"],
   },
 
   icon: {
