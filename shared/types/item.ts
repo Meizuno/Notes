@@ -1,7 +1,8 @@
 export type ItemType = {
   id: number;
   label: string;
+  type: "folder" | "markdown";
   content: string | null;
-  parent_id: number | null;
+  parentId: number | null;
   children?: ItemType[];
 };

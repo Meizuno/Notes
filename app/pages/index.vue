@@ -6,7 +6,7 @@
     >
       <UTree
         :items="data"
-        :get-key="i => String(i.id)"
+        :get-key="(i) => String(i.id)"
         size="xl"
         expanded-icon="i-lucide-book-open"
         collapsed-icon="i-lucide-book"
@@ -19,6 +19,7 @@
         color="neutral"
         size="xl"
         class="fixed bottom-4 right-4 rounded-full w-fit ml-auto"
+        @click="navigateTo('/items/new')"
       />
     </div>
     <div v-else class="h-full flex justify-center items-center">
@@ -50,7 +51,7 @@ const { data } = await useFetch("/api/items");
 
 const onSelect = (e: TreeItemSelectEvent<TreeItem>) => {
   if (e.detail.value && e.detail.value.type == "markdown") {
-    navigateTo(`files/${e.detail.value.id}/content`);
+    navigateTo(`items/${e.detail.value.id}/content`);
   }
 };
 </script>
