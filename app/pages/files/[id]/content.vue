@@ -63,5 +63,5 @@ const save = () => {
 
 const cancel = () => {
   editable.value = false;
-}
+};
 </script>

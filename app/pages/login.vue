@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full flex justify-center items-center">
+  <div class="h-dvh flex justify-center items-center">
     <div class="flex flex-col items-center gap-4">
       <h1 class="h-full text-2xl">
         <span>Content is private, please login!</span>
