@@ -4,6 +4,7 @@
       :key="key"
       v-model="content"
       :editable="editable"
+      :placeholder="editable && !content ? 'Start writing...' : 'Empty file'"
       content-type="markdown"
       class="w-full"
     />
@@ -57,11 +58,22 @@ const edit = () => {
   key.value = key.value + 1;
 };
 
-const save = () => {
+const save = async () => {
   editable.value = false;
+  key.value = key.value + 1;
+
+  if (data.value) {
+    await $fetch(`/api/files/${data.value.id}`, {
+      method: "PUT",
+      body: {
+        content: content.value,
+      },
+    });
+  }
 };
 
 const cancel = () => {
   editable.value = false;
-}
+  key.value = key.value + 1;
+};
 </script>

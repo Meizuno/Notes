@@ -10,15 +10,11 @@
       <UInput v-model="state.label" />
     </UFormField>
 
-    <UFormField label="Type" name="type">
-      <USelect v-model="state.type" :items="types" />
-    </UFormField>
-
     <UFormField label="Path" name="path">
       <UInput v-model="state.path" @click="selectPath" />
     </UFormField>
 
-    <UButton type="submit"> Create </UButton>
+    <UButton type="submit"> Update </UButton>
   </UForm>
   <ModalPathSelect
     v-model:open="openSelectPath"
@@ -31,23 +27,20 @@
 import type { FormError, FormSubmitEvent } from "@nuxt/ui";
 import { ModalPathSelect } from "#components";
 
-const parentId = ref<number>();
-const types = ref([
-  {
-    label: "Folder",
-    value: "folder",
-    icon: "i-lucide-book",
-  },
-  {
-    label: "File",
-    value: "markdown",
-    icon: "i-lucide-file",
-  },
-]);
+const route = useRoute();
+const itemId = route.params.id;
+const { data } = await useFetch<{
+  id: number;
+  label: string;
+  type: string;
+  parentId: number;
+  path: string;
+}>(`/api/items/${itemId}`);
+
+const parentId = ref(data.value?.parentId);
 const state = reactive({
-  label: undefined,
-  type: undefined,
-  path: undefined,
+  label: data.value?.label,
+  path: data.value?.path,
 });
 
 type Schema = typeof state;
@@ -55,25 +48,23 @@ type Schema = typeof state;
 const validate = (state: Partial<Schema>): FormError[] => {
   const errors = [];
   if (!state.label) errors.push({ name: "label", message: "Missing value!" });
-  if (!state.type) errors.push({ name: "type", message: "Missing value!" });
   return errors;
 };
 
 const toast = useToast();
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   try {
-    await $fetch("/api/items", {
-      method: "POST",
+    await $fetch(`/api/items/${itemId}`, {
+      method: "PUT",
       body: {
         label: event.data.label,
-        type: event.data.type,
         parentId: parentId.value,
       },
     });
 
     toast.add({
       title: "Success",
-      description: `New ${state.type} created.`,
+      description: `Update ${data.value?.label}`,
       color: "success",
     });
 

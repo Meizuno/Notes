@@ -11,7 +11,37 @@
         expanded-icon="i-lucide-book-open"
         collapsed-icon="i-lucide-book"
         @select="onSelect"
-      />
+      >
+        <template #item="{ item }">
+          <div class="flex items-center justify-between gap-2 w-full">
+            <div class="flex gap-2 items-center">
+              <Icon v-if="item.type == 'markdown'" name="i-lucide-file" />
+              <Icon v-else name="i-lucide-book" />
+
+              <span class="truncate">
+                {{ item.label }}
+              </span>
+            </div>
+
+            <ClientOnly>
+              <div>
+                <UButton
+                  icon="i-material-symbols-edit-rounded"
+                  variant="ghost"
+                  color="info"
+                  @click="navigateTo(`/items/${item.id}/edit`)"
+                />
+                <UButton
+                  icon="i-material-symbols-delete-rounded"
+                  variant="ghost"
+                  color="error"
+                  @click="confirmDelete(item)"
+                />
+              </div>
+            </ClientOnly>
+          </div>
+        </template>
+      </UTree>
 
       <UButton
         variant="subtle"
@@ -36,6 +66,9 @@
             label: 'Create file',
             color: 'primary',
             variant: 'subtle',
+            onClick() {
+              navigateTo('/items/new');
+            },
           },
         ]"
       />
@@ -53,5 +86,21 @@ const onSelect = (e: TreeItemSelectEvent<TreeItem>) => {
   if (e.detail.value && e.detail.value.type == "markdown") {
     navigateTo(`items/${e.detail.value.id}/content`);
   }
+};
+
+const toast = useToast();
+const confirmDelete = async (item: any) => {
+  const ok = confirm(`Delete "${item.label}"?`);
+  if (!ok) return;
+
+  await $fetch(`/api/items/${item.id}`, {
+    method: "DELETE",
+  });
+
+  toast.add({
+    title: "Success",
+    description: `Deleted "${item.label}".`,
+    color: "success",
+  });
 };
 </script>

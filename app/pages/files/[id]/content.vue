@@ -57,8 +57,17 @@ const edit = () => {
   key.value = key.value + 1;
 };
 
-const save = () => {
-  editable.value = false;
+const save = async () => {
+  // editable.value = false;
+
+  if (data.value) {
+    await $fetch(`/api/files/${data.value.id}`, {
+      method: "PUT",
+      body: {
+        content: content.value,
+      },
+    });
+  }
 };
 
 const cancel = () => {
