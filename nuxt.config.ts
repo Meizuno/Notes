@@ -19,6 +19,13 @@ export default defineNuxtConfig({
     head: {
       title: "Notes",
       link: [{ rel: "icon", type: "image/svg", href: "/favicon.svg" }],
+      meta: [
+        {
+          name: "viewport",
+          content:
+            "width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no viewport-fit=cover",
+        },
+      ],
     },
   },
 

@@ -42,6 +42,8 @@
 <script setup lang="ts">
 const route = useRoute();
 
+await new Promise(resolve => setTimeout(resolve, 5000));
+
 const key = ref(1);
 const editable = ref(false);
 const content = ref<string>();
