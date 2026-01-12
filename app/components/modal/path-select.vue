@@ -40,9 +40,6 @@
 
     <template #footer>
       <div class="flex gap-2 justify-end w-full">
-        <!-- <UButton color="neutral" variant="outline" size="lg" @click="cancel">
-          Cancel
-        </UButton> -->
         <UButton color="primary" variant="subtle" size="lg" @click="select">
           Select
         </UButton>
@@ -59,7 +56,9 @@ const modelValue = defineModel<number | undefined>();
 const path = defineModel<string | undefined>("path");
 
 const items = ref<ItemType[]>([]);
-const pathList = ref<BreadcrumbItem[]>([]);
+const pathList = ref<BreadcrumbItem[]>(
+  (path.value?.split("/") || []).map((segment) => ({ label: segment }))
+);
 
 if (modelValue.value) {
   const { data } = await useFetch<ItemType[]>(

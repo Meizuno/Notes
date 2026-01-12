@@ -14,8 +14,8 @@
       >
         <template #item="{ item }">
           <div class="flex items-center justify-between gap-2 w-full">
-            <div class="flex gap-2 items-center">
-              <Icon v-if="item.type == 'markdown'" name="i-lucide-file" />
+            <div class="flex gap-2 items-center min-w-0">
+              <Icon v-if="item.type == 'markdown'" name="i-lucide-file" class="shrink-0" />
               <Icon v-else name="i-lucide-book" />
 
               <span class="truncate">
@@ -24,7 +24,7 @@
             </div>
 
             <ClientOnly>
-              <div>
+              <div class="flex shrink-0">
                 <UButton
                   icon="i-material-symbols-edit-rounded"
                   variant="ghost"
