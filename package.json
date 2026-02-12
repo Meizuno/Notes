@@ -14,6 +14,7 @@
 		"migrate:remote": "wrangler d1 migrations apply notes-storage --remote"
 	},
 	"dependencies": {
+		"@nuxtjs/i18n": "^9.0.0",
 		"@nuxt/ui": "^4.3.0",
 		"nanoid": "^5.1.6",
 		"nuxt": "^4.2.2",

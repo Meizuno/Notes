@@ -8,9 +8,9 @@
           <Icon name="i-emojione-v1-note-pad" class="size-6" />
         </div>
         <div class="leading-tight">
-          <div class="text-lg font-semibold">Notes</div>
+          <div class="text-lg font-semibold">{{ t("app.title") }}</div>
           <div class="hidden text-xs text-slate-400 sm:block">
-            Organize everything in one calm space
+            {{ t("app.subtitle") }}
           </div>
         </div>
       </div>
@@ -18,54 +18,71 @@
 
     <template #right>
       <div class="flex items-center gap-2">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          :icon="isDark ? 'i-lucide-sun' : 'i-lucide-moon'"
-          aria-label="Toggle theme"
-          @click="toggleTheme"
-        />
-      </div>
-      <div v-if="user" class="flex items-center gap-2">
-        <UButton
-          v-if="route.path === '/'"
-          color="primary"
-          variant="solid"
-          icon="i-material-symbols-add-rounded"
-          size="sm"
-          class="hidden sm:flex"
-          @click="goNew"
-        >
-          New
-        </UButton>
-        <UUser
-          :name="user.name"
-          :avatar="{
-            src: user.photo,
-            icon: 'i-lucide-image',
-          }"
-        />
-        <UTooltip :delay-duration="0" text="Logout">
+        <ClientOnly>
+          <ULocaleSelect
+            v-model="selectedLocale"
+            :locales="localeItems"
+            color="neutral"
+            variant="ghost"
+            :aria-label="t('ui.select_language')"
+          />
+        </ClientOnly>
+        <template v-if="user">
+          <UUser
+            :name="user.name"
+            :avatar="{
+              src: user.photo,
+              icon: 'i-lucide-image',
+            }"
+            :ui="{
+              name: 'hidden sm:flex',
+            }"
+          />
+          <UTooltip :delay-duration="0" :text="t('auth.logout')">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-material-symbols-logout"
+              :aria-label="t('auth.logout')"
+              @click="logout"
+            />
+          </UTooltip>
+        </template>
+        <ClientOnly>
           <UButton
             color="neutral"
             variant="ghost"
-            icon="i-material-symbols-logout"
-            aria-label="Logout"
-            @click="logout"
+            :icon="isDark ? 'i-lucide-sun' : 'i-lucide-moon'"
+            :aria-label="t('ui.toggle_theme')"
+            @click="toggleTheme"
           />
-        </UTooltip>
+        </ClientOnly>
       </div>
     </template>
   </UHeader>
 </template>
 
 <script setup lang="ts">
+const { t, locale, locales, setLocale } = useI18n();
 const { user, clear } = useUserSession();
 const route = useRoute();
 const toast = useToast();
 const colorMode = useColorMode();
 
 const isDark = computed(() => colorMode.value === "dark");
+const localeItems = computed(() =>
+  Array.isArray(locales.value) ? locales.value : (locales as any)
+);
+const selectedLocale = computed({
+  get: () => locale.value,
+  set: (value: string) => {
+    if (setLocale) {
+      setLocale(value);
+    } else {
+      locale.value = value;
+    }
+  },
+});
 
 const goNew = () => {
   navigateTo("/items/new");
@@ -82,7 +99,7 @@ const logout = () => {
 
 onMounted(() => {
   if (route.query.error === "USER_NOT_FOUND") {
-    toast.add({ title: "User has no permissions" });
+    toast.add({ title: t("errors.user_no_permissions") });
 
     navigateTo("/", { replace: true });
   }

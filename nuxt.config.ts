@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["nitro-cloudflare-dev", "@nuxt/ui", "nuxt-auth-utils"],
+  modules: ["nitro-cloudflare-dev", "@nuxt/ui", "nuxt-auth-utils", "@nuxtjs/i18n"],
   css: ["~/assets/css/main.css"],
 
   app: {
@@ -51,6 +51,16 @@ export default defineNuxtConfig({
         prefix: "notes",
         dir: "./app/assets/icons",
       },
+    ],
+  },
+
+  i18n: {
+    strategy: "no_prefix",
+    defaultLocale: "en",
+    locales: [
+      { code: "en", name: "English", file: "en.json" },
+      { code: "cs", name: "Czech", file: "cs.json" },
+      { code: "ua", name: "Ukrainian", file: "ua.json" },
     ],
   },
 });

@@ -2,9 +2,11 @@
   <div class="flex h-full flex-col gap-6">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div class="w-full text-center">
-        <h1 class="page-title text-3xl sm:text-4xl font-semibold">Your Library</h1>
+        <h1 class="page-title text-3xl sm:text-4xl font-semibold">
+          {{ t("home.title") }}
+        </h1>
         <p class="page-subtitle text-sm sm:text-base">
-          Everything you write, grouped with care.
+          {{ t("home.subtitle") }}
         </p>
       </div>
     </div>
@@ -12,15 +14,16 @@
     <div v-if="data && data.length > 0" class="flex h-full flex-col gap-4">
       <div class="panel p-2 sm:p-4">
         <div class="mb-3 hidden items-center justify-between px-1 sm:flex">
-          <div class="text-sm font-medium text-slate-500">All notes</div>
+          <div class="text-sm font-medium text-slate-500">
+            {{ t("home.all_notes") }}
+          </div>
           <UButton
             color="primary"
             variant="solid"
             icon="i-material-symbols-add-rounded"
-            size="sm"
             @click="navigateTo('/items/new')"
           >
-            Create note
+            {{ t("home.create_note") }}
           </UButton>
         </div>
         <UTree
@@ -37,11 +40,17 @@
                 <Icon
                   v-if="item.type == 'markdown'"
                   name="i-lucide-file"
-                  class="shrink-0 text-cyan-300"
+                  class="shrink-0 text-cyan-300 size-5"
                 />
-                <Icon v-else name="i-lucide-book" class="text-indigo-300" />
+                <Icon
+                  v-else
+                  name="i-lucide-book"
+                  class="text-indigo-300 size-5"
+                />
 
-                <span class="block min-w-0 flex-1 truncate text-left font-medium">
+                <span
+                  class="block min-w-0 flex-1 truncate text-left font-medium"
+                >
                   {{ item.label }}
                 </span>
               </div>
@@ -81,14 +90,14 @@
         <UEmpty
           size="xl"
           icon="notes:logo"
-          title="No files yet"
-          description="Create your first note and keep ideas flowing."
+          :title="t('home.empty_title')"
+          :description="t('home.empty_description')"
           class="min-w-sm"
           :actions="[
             {
               icon: 'i-material-symbols-add-rounded',
               size: 'xl',
-              label: 'Create note',
+              label: t('home.create_note'),
               color: 'primary',
               variant: 'solid',
               onClick() {
@@ -106,6 +115,7 @@
 import type { TreeItemSelectEvent } from "reka-ui";
 import type { TreeItem } from "@nuxt/ui";
 
+const { t } = useI18n();
 const { data } = await useFetch("/api/items");
 
 const onSelect = (e: TreeItemSelectEvent<TreeItem>) => {
@@ -116,7 +126,11 @@ const onSelect = (e: TreeItemSelectEvent<TreeItem>) => {
 
 const toast = useToast();
 const confirmDelete = async (item: any) => {
-  const ok = confirm(`Delete "${item.label}"?`);
+  const ok = confirm(
+    t("home.confirm_delete", {
+      label: item.label,
+    })
+  );
   if (!ok) return;
 
   await $fetch(`/api/items/${item.id}`, {
@@ -124,8 +138,8 @@ const confirmDelete = async (item: any) => {
   });
 
   toast.add({
-    title: "Success",
-    description: `Deleted "${item.label}".`,
+    title: t("ui.success"),
+    description: t("home.deleted", { label: item.label }),
     color: "success",
   });
 };

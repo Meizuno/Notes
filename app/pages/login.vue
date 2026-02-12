@@ -8,21 +8,21 @@
           <Icon name="i-emojione-v1-note-pad" class="size-8" />
         </div>
       </div>
-      <h1 class="text-2xl font-semibold">Welcome back</h1>
+      <h1 class="text-2xl font-semibold">{{ t("auth.welcome_back") }}</h1>
       <p class="mt-2 text-sm text-slate-400">
-        Your notes are private. Sign in to continue.
+        {{ t("auth.subtitle") }}
       </p>
       <div class="mt-6">
-        <UTooltip :delay-duration="0" text="Login with google">
+        <UTooltip :delay-duration="0" :text="t('auth.login_google')">
           <UButton
             color="primary"
             icon="i-flat-color-icons-google"
-            aria-label="Google"
+            :aria-label="t('auth.login_google')"
             size="xl"
             class="w-full justify-center text-lg"
             @click="googleLogin"
           >
-            Continue with Google
+            {{ t("auth.continue_google") }}
           </UButton>
         </UTooltip>
       </div>
@@ -35,6 +35,8 @@ definePageMeta({
   layout: false,
 });
 
+const { t } = useI18n();
+
 const googleLogin = () => {
   window.location.href = "/auth/google";
 };
@@ -45,7 +47,7 @@ const route = useRoute();
 onMounted(() => {
   if (route.query && route.query.error == "USER_NOT_FOUND") {
     toast.add({
-      title: "Access denied!",
+      title: t("auth.access_denied"),
       icon: "i-mdi-anonymous",
       progress: false,
       color: "error",

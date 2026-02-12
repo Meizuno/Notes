@@ -13,6 +13,7 @@ export default defineOAuthGoogleEventHandler({
 
     await setUserSession(event, {
       user: {
+        id: userDB.id,
         name: user.name,
         photo: user.picture,
       },

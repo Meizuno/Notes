@@ -6,7 +6,7 @@
     :ui="{ body: 'px-2' }"
   >
     <template #title>
-      <span>Select path for folder ot file</span>
+      <span>{{ t("modal.path_title") }}</span>
     </template>
 
     <template #description>
@@ -41,7 +41,7 @@
     <template #footer>
       <div class="flex gap-2 justify-end w-full">
         <UButton color="primary" variant="subtle" size="lg" @click="select">
-          Select
+          {{ t("ui.select") }}
         </UButton>
       </div>
     </template>
@@ -50,6 +50,8 @@
 
 <script setup lang="ts">
 import type { BreadcrumbItem } from "@nuxt/ui";
+
+const { t } = useI18n();
 
 const open = defineModel<boolean | undefined>("open");
 const modelValue = defineModel<number | undefined>();

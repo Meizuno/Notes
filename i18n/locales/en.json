@@ -1,0 +1,68 @@
+{
+  "app": {
+    "title": "Notes",
+    "subtitle": "Organize everything in one calm space"
+  },
+  "auth": {
+    "welcome_back": "Welcome back",
+    "subtitle": "Your notes are private. Sign in to continue.",
+    "login_google": "Login with Google",
+    "continue_google": "Continue with Google",
+    "access_denied": "Access denied!",
+    "logout": "Logout"
+  },
+  "ui": {
+    "select_language": "Select language",
+    "toggle_theme": "Toggle theme",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "name": "Name",
+    "path": "Path",
+    "type": "Type",
+    "select": "Select",
+    "read_mode": "Read mode",
+    "edit_mode": "Editing mode",
+    "saved": "Saved",
+    "discarded": "Discarded",
+    "content_saved": "Content updated successfully.",
+    "changes_discarded": "Changes were discarded.",
+    "success": "Success",
+    "error": "Error"
+  },
+  "errors": {
+    "user_no_permissions": "User has no permissions",
+    "missing_value": "Missing value!"
+  },
+  "editor": {
+    "upload_failed": "Upload failed",
+    "embed_failed": "Could not embed the image from clipboard.",
+    "placeholder": "Write..."
+  },
+  "items": {
+    "note": "Note",
+    "new_title": "Create a new item",
+    "new_subtitle": "Capture a thought or start a new folder.",
+    "update_title": "Update details",
+    "update_subtitle": "Refine the title or move it to a new place.",
+    "created": "New {type} created.",
+    "updated": "Update {label}",
+    "type": {
+      "folder": "Folder",
+      "file": "File"
+    }
+  },
+  "home": {
+    "title": "Your Library",
+    "subtitle": "Everything you write, grouped with care.",
+    "all_notes": "All notes",
+    "create_note": "Create note",
+    "empty_title": "No files yet",
+    "empty_description": "Create your first note and keep ideas flowing.",
+    "confirm_delete": "Delete \"{label}\"?",
+    "deleted": "Deleted \"{label}\"."
+  },
+  "modal": {
+    "path_title": "Select path for folder or file"
+  }
+}

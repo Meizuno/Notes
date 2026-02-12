@@ -7,25 +7,25 @@
     @submit="onSubmit"
   >
     <div class="sm:col-span-2">
-      <h1 class="page-title text-xl">Create a new item</h1>
-      <p class="page-subtitle text-sm">Capture a thought or start a new folder.</p>
+      <h1 class="page-title text-xl">{{ t("items.new_title") }}</h1>
+      <p class="page-subtitle text-sm">{{ t("items.new_subtitle") }}</p>
     </div>
 
-    <UFormField label="Name" name="label" class="sm:col-span-2">
+    <UFormField :label="t('ui.name')" name="label" class="sm:col-span-2">
       <UInput v-model="state.label" size="lg" />
     </UFormField>
 
-    <UFormField label="Type" name="type">
+    <UFormField :label="t('ui.type')" name="type">
       <USelect v-model="state.type" :items="types" size="lg" />
     </UFormField>
 
-    <UFormField label="Path" name="path" class="sm:col-span-2">
+    <UFormField :label="t('ui.path')" name="path" class="sm:col-span-2">
       <UInput v-model="state.path" size="lg" @click="selectPath" />
     </UFormField>
 
     <div class="sm:col-span-2 flex items-center justify-end gap-2">
       <UButton type="submit" size="lg" color="primary" variant="solid">
-        Create
+        {{ t("ui.create") }}
       </UButton>
     </div>
   </UForm>
@@ -40,15 +40,19 @@
 import type { FormError, FormSubmitEvent } from "@nuxt/ui";
 import { ModalPathSelect } from "#components";
 
+const { t } = useI18n();
+
 const parentId = ref<number>();
-const types = ref([
+const resolveTypeLabel = (value?: string) =>
+  value === "folder" ? t("items.type.folder") : t("items.type.file");
+const types = computed(() => [
   {
-    label: "Folder",
+    label: resolveTypeLabel("folder"),
     value: "folder",
     icon: "i-lucide-book",
   },
   {
-    label: "File",
+    label: resolveTypeLabel("markdown"),
     value: "markdown",
     icon: "i-lucide-file",
   },
@@ -63,8 +67,12 @@ type Schema = typeof state;
 
 const validate = (state: Partial<Schema>): FormError[] => {
   const errors = [];
-  if (!state.label) errors.push({ name: "label", message: "Missing value!" });
-  if (!state.type) errors.push({ name: "type", message: "Missing value!" });
+  if (!state.label) {
+    errors.push({ name: "label", message: t("errors.missing_value") });
+  }
+  if (!state.type) {
+    errors.push({ name: "type", message: t("errors.missing_value") });
+  }
   return errors;
 };
 
@@ -81,15 +89,17 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     });
 
     toast.add({
-      title: "Success",
-      description: `New ${state.type} created.`,
+      title: t("ui.success"),
+      description: t("items.created", {
+        type: resolveTypeLabel(state.type),
+      }),
       color: "success",
     });
 
     navigateTo("/");
   } catch (error) {
     toast.add({
-      title: "Error",
+      title: t("ui.error"),
       description: error as string,
       color: "error",
     });

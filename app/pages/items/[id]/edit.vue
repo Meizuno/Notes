@@ -7,21 +7,21 @@
     @submit="onSubmit"
   >
     <div class="sm:col-span-2">
-      <h1 class="page-title text-xl">Update details</h1>
-      <p class="page-subtitle text-sm">Refine the title or move it to a new place.</p>
+      <h1 class="page-title text-xl">{{ t("items.update_title") }}</h1>
+      <p class="page-subtitle text-sm">{{ t("items.update_subtitle") }}</p>
     </div>
 
-    <UFormField label="Name" name="label" class="sm:col-span-2">
+    <UFormField :label="t('ui.name')" name="label" class="sm:col-span-2">
       <UInput v-model="state.label" size="lg" />
     </UFormField>
 
-    <UFormField label="Path" name="path" class="sm:col-span-2">
+    <UFormField :label="t('ui.path')" name="path" class="sm:col-span-2">
       <UInput v-model="state.path" size="lg" @click="selectPath" />
     </UFormField>
 
     <div class="sm:col-span-2 flex items-center justify-end gap-2">
       <UButton type="submit" size="lg" color="primary" variant="solid">
-        Update
+        {{ t("ui.update") }}
       </UButton>
     </div>
   </UForm>
@@ -35,6 +35,8 @@
 <script setup lang="ts">
 import type { FormError, FormSubmitEvent } from "@nuxt/ui";
 import { ModalPathSelect } from "#components";
+
+const { t } = useI18n();
 
 const route = useRoute();
 const itemId = route.params.id;
@@ -56,7 +58,9 @@ type Schema = typeof state;
 
 const validate = (state: Partial<Schema>): FormError[] => {
   const errors = [];
-  if (!state.label) errors.push({ name: "label", message: "Missing value!" });
+  if (!state.label) {
+    errors.push({ name: "label", message: t("errors.missing_value") });
+  }
   return errors;
 };
 
@@ -72,15 +76,15 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     });
 
     toast.add({
-      title: "Success",
-      description: `Update ${data.value?.label}`,
+      title: t("ui.success"),
+      description: t("items.updated", { label: data.value?.label }),
       color: "success",
     });
 
     navigateTo("/");
   } catch (error) {
     toast.add({
-      title: "Error",
+      title: t("ui.error"),
       description: error as string,
       color: "error",
     });

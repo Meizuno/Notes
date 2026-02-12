@@ -1,0 +1,68 @@
+{
+  "app": {
+    "title": "Poznámky",
+    "subtitle": "Uspořádejte vše v jednom klidném prostoru"
+  },
+  "auth": {
+    "welcome_back": "Vítejte zpět",
+    "subtitle": "Vaše poznámky jsou soukromé. Přihlaste se pro pokračování.",
+    "login_google": "Přihlásit se přes Google",
+    "continue_google": "Pokračovat s Google",
+    "access_denied": "Přístup odepřen!",
+    "logout": "Odhlásit se"
+  },
+  "ui": {
+    "select_language": "Vyberte jazyk",
+    "toggle_theme": "Přepnout motiv",
+    "edit": "Upravit",
+    "create": "Vytvořit",
+    "update": "Aktualizovat",
+    "name": "Název",
+    "path": "Cesta",
+    "type": "Typ",
+    "select": "Vybrat",
+    "read_mode": "Režim čtení",
+    "edit_mode": "Režim úprav",
+    "saved": "Uloženo",
+    "discarded": "Zahozeno",
+    "content_saved": "Obsah byl úspěšně uložen.",
+    "changes_discarded": "Změny byly zahozeny.",
+    "success": "Úspěch",
+    "error": "Chyba"
+  },
+  "errors": {
+    "user_no_permissions": "Uživatel nemá oprávnění",
+    "missing_value": "Chybí hodnota!"
+  },
+  "editor": {
+    "upload_failed": "Nahrání selhalo",
+    "embed_failed": "Nepodařilo se vložit obrázek ze schránky.",
+    "placeholder": "Pište..."
+  },
+  "items": {
+    "note": "Poznámka",
+    "new_title": "Vytvořit novou položku",
+    "new_subtitle": "Zapište myšlenku nebo založte novou složku.",
+    "update_title": "Upravit detaily",
+    "update_subtitle": "Upravte název nebo ji přesuňte na nové místo.",
+    "created": "Nová položka {type} byla vytvořena.",
+    "updated": "Aktualizováno {label}",
+    "type": {
+      "folder": "Složka",
+      "file": "Soubor"
+    }
+  },
+  "home": {
+    "title": "Vaše knihovna",
+    "subtitle": "Vše, co píšete, pečlivě uspořádané.",
+    "all_notes": "Všechny poznámky",
+    "create_note": "Vytvořit poznámku",
+    "empty_title": "Zatím žádné soubory",
+    "empty_description": "Vytvořte svou první poznámku a nechte nápady plynout.",
+    "confirm_delete": "Smazat \"{label}\"?",
+    "deleted": "Smazáno \"{label}\"."
+  },
+  "modal": {
+    "path_title": "Vyberte cestu pro složku nebo soubor"
+  }
+}
