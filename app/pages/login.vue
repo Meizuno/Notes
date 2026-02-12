@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-h-dvh items-center justify-center px-4 py-10">
-    <div class="auth-card text-center">
+    <div class="auth-card text-center p-8">
       <div class="mb-6 flex items-center justify-center">
         <div
           class="flex size-14 items-center justify-center rounded-3xl bg-white/10 ring-1 ring-white/10"
