@@ -1,77 +1,103 @@
 <template>
-  <div class="h-full">
-    <div
-      v-if="data && data.length > 0"
-      class="h-full flex flex-col justify-between"
-    >
-      <UTree
-        :items="data"
-        :get-key="(i) => String(i.id)"
-        size="xl"
-        expanded-icon="i-lucide-book-open"
-        collapsed-icon="i-lucide-book"
-        @select="onSelect"
-      >
-        <template #item="{ item }">
-          <div class="flex items-center justify-between gap-2 w-full">
-            <div class="flex gap-2 items-center min-w-0">
-              <Icon v-if="item.type == 'markdown'" name="i-lucide-file" class="shrink-0" />
-              <Icon v-else name="i-lucide-book" />
+  <div class="flex h-full flex-col gap-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="w-full text-center">
+        <h1 class="page-title text-3xl sm:text-4xl font-semibold">Your Library</h1>
+        <p class="page-subtitle text-sm sm:text-base">
+          Everything you write, grouped with care.
+        </p>
+      </div>
+    </div>
 
-              <span class="truncate">
-                {{ item.label }}
-              </span>
-            </div>
+    <div v-if="data && data.length > 0" class="flex h-full flex-col gap-4">
+      <div class="panel p-2 sm:p-4">
+        <div class="mb-3 hidden items-center justify-between px-1 sm:flex">
+          <div class="text-sm font-medium text-slate-500">All notes</div>
+          <UButton
+            color="primary"
+            variant="solid"
+            icon="i-material-symbols-add-rounded"
+            size="sm"
+            @click="navigateTo('/items/new')"
+          >
+            Create note
+          </UButton>
+        </div>
+        <UTree
+          :items="data"
+          :get-key="(i) => String(i.id)"
+          expanded-icon="i-lucide-book-open"
+          collapsed-icon="i-lucide-book"
+          class="notes-tree"
+          @select="onSelect"
+        >
+          <template #item="{ item }">
+            <div class="flex w-full items-center justify-between gap-3 py-1">
+              <div class="flex min-w-0 flex-1 items-center gap-3">
+                <Icon
+                  v-if="item.type == 'markdown'"
+                  name="i-lucide-file"
+                  class="shrink-0 text-cyan-300"
+                />
+                <Icon v-else name="i-lucide-book" class="text-indigo-300" />
 
-            <ClientOnly>
-              <div class="flex shrink-0">
-                <UButton
-                  icon="i-material-symbols-edit-rounded"
-                  variant="ghost"
-                  color="info"
-                  @click="navigateTo(`/items/${item.id}/edit`)"
-                />
-                <UButton
-                  icon="i-material-symbols-delete-rounded"
-                  variant="ghost"
-                  color="error"
-                  @click="confirmDelete(item)"
-                />
+                <span class="block min-w-0 flex-1 truncate text-left font-medium">
+                  {{ item.label }}
+                </span>
               </div>
-            </ClientOnly>
-          </div>
-        </template>
-      </UTree>
+
+              <ClientOnly>
+                <div class="flex shrink-0 items-center gap-1">
+                  <UButton
+                    icon="i-material-symbols-edit-rounded"
+                    variant="ghost"
+                    color="info"
+                    @click="navigateTo(`/items/${item.id}/edit`)"
+                  />
+                  <UButton
+                    icon="i-material-symbols-delete-rounded"
+                    variant="ghost"
+                    color="error"
+                    @click="confirmDelete(item)"
+                  />
+                </div>
+              </ClientOnly>
+            </div>
+          </template>
+        </UTree>
+      </div>
 
       <UButton
-        variant="subtle"
+        variant="solid"
         icon="i-material-symbols-add-rounded"
-        color="neutral"
+        color="primary"
         size="xl"
-        class="fixed bottom-4 right-4 rounded-full w-fit ml-auto"
+        class="floating-actions rounded-full sm:hidden"
         @click="navigateTo('/items/new')"
       />
     </div>
-    <div v-else class="h-full flex justify-center items-center">
-      <UEmpty
-        size="xl"
-        icon="notes:logo"
-        title="No files"
-        description="You can create first."
-        class="min-w-sm"
-        :actions="[
-          {
-            icon: 'i-material-symbols-add-rounded',
-            size: 'xl',
-            label: 'Create file',
-            color: 'primary',
-            variant: 'subtle',
-            onClick() {
-              navigateTo('/items/new');
+    <div v-else class="flex h-full items-center justify-center">
+      <div class="panel p-6 sm:p-8">
+        <UEmpty
+          size="xl"
+          icon="notes:logo"
+          title="No files yet"
+          description="Create your first note and keep ideas flowing."
+          class="min-w-sm"
+          :actions="[
+            {
+              icon: 'i-material-symbols-add-rounded',
+              size: 'xl',
+              label: 'Create note',
+              color: 'primary',
+              variant: 'solid',
+              onClick() {
+                navigateTo('/items/new');
+              },
             },
-          },
-        ]"
-      />
+          ]"
+        />
+      </div>
     </div>
   </div>
 </template>

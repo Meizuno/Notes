@@ -3,18 +3,27 @@
     :validate="validate"
     :state="state"
     :validate-on="['input']"
-    class="space-y-4"
+    class="panel grid gap-4 p-4 sm:grid-cols-2 sm:p-6"
     @submit="onSubmit"
   >
-    <UFormField label="Name" name="label">
-      <UInput v-model="state.label" />
+    <div class="sm:col-span-2">
+      <h1 class="page-title text-xl">Update details</h1>
+      <p class="page-subtitle text-sm">Refine the title or move it to a new place.</p>
+    </div>
+
+    <UFormField label="Name" name="label" class="sm:col-span-2">
+      <UInput v-model="state.label" size="lg" />
     </UFormField>
 
-    <UFormField label="Path" name="path">
-      <UInput v-model="state.path" @click="selectPath" />
+    <UFormField label="Path" name="path" class="sm:col-span-2">
+      <UInput v-model="state.path" size="lg" @click="selectPath" />
     </UFormField>
 
-    <UButton type="submit"> Update </UButton>
+    <div class="sm:col-span-2 flex items-center justify-end gap-2">
+      <UButton type="submit" size="lg" color="primary" variant="solid">
+        Update
+      </UButton>
+    </div>
   </UForm>
   <ModalPathSelect
     v-model:open="openSelectPath"

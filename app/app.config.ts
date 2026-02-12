@@ -1,7 +1,7 @@
 export default defineAppConfig({
   ui: {
     main: {
-      base: "min-h-[calc(100dvh-var(--ui-header-height))] h-[calc(100dvh-var(--ui-header-height))] py-2",
+      base: "min-h-[calc(100dvh-var(--ui-header-height))] flex-1 py-4 sm:py-6",
     },
     button: {
       slots: {

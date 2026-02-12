@@ -1,15 +1,38 @@
 <template>
-  <div class="h-full flex flex-col gap-2">
-    <UEditor
-      :key="key"
-      v-model="content"
-      :editable="editable"
-      :placeholder="editable && !content ? 'Start writing...' : 'Empty file'"
-      content-type="markdown"
-      class="w-full"
-    />
-    <div class="fixed bottom-4 right-4 w-fit ml-auto">
-      <div v-if="editable" class="flex gap-4">
+  <div class="flex h-full flex-col gap-4">
+    <div class="panel p-4 sm:p-6">
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h1 class="page-title text-xl">Note</h1>
+          <p class="page-subtitle text-sm">
+            {{ editable ? "Editing mode" : "Read mode" }}
+          </p>
+        </div>
+        <UButton
+          v-if="!editable"
+          variant="subtle"
+          icon="i-material-symbols-edit-rounded"
+          color="neutral"
+          size="sm"
+          class="hidden sm:flex"
+          @click="edit"
+        >
+          Edit
+        </UButton>
+      </div>
+
+      <UEditor
+        :key="key"
+        v-model="content"
+        :editable="editable"
+        :placeholder="editable && !content ? 'Start writing...' : 'Empty file'"
+        content-type="markdown"
+        class="editor-shell w-full"
+      />
+    </div>
+
+    <div class="floating-actions">
+      <div v-if="editable" class="flex gap-3">
         <UButton
           variant="subtle"
           icon="i-material-symbols-close-rounded"
@@ -19,9 +42,9 @@
           @click="cancel"
         />
         <UButton
-          variant="subtle"
+          variant="solid"
           icon="i-material-symbols-check-rounded"
-          color="neutral"
+          color="primary"
           size="xl"
           class="rounded-full"
           @click="save"
@@ -29,11 +52,11 @@
       </div>
       <UButton
         v-else
-        variant="subtle"
+        variant="solid"
         icon="i-material-symbols-edit-rounded"
-        color="neutral"
+        color="primary"
         size="xl"
-        class="rounded-full"
+        class="rounded-full sm:hidden"
         @click="edit"
       />
     </div>
