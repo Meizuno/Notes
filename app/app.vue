@@ -1,12 +1,8 @@
 <template>
   <UApp>
-    <AppLoading v-if="isLoading" />
+    <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
   </UApp>
 </template>
-
-<script setup lang="ts">
-const { isLoading } = useLoadingIndicator();
-</script>
