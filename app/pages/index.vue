@@ -13,13 +13,13 @@
 
     <div v-if="data && data.length > 0" class="flex h-full flex-col gap-4">
       <div class="panel p-2 sm:p-4">
-        <div class="mb-3 hidden items-center justify-between px-1 sm:flex">
+        <div class="mb-3 items-center justify-between px-3 flex">
           <div class="text-sm font-medium text-slate-500">
             {{ t("home.all_notes") }}
           </div>
           <UButton
             color="primary"
-            variant="solid"
+            variant="subtle"
             icon="i-material-symbols-add-rounded"
             @click="navigateTo('/items/new')"
           >
@@ -75,15 +75,6 @@
           </template>
         </UTree>
       </div>
-
-      <UButton
-        variant="solid"
-        icon="i-material-symbols-add-rounded"
-        color="primary"
-        size="xl"
-        class="floating-actions rounded-full sm:hidden"
-        @click="navigateTo('/items/new')"
-      />
     </div>
     <div v-else class="flex h-full items-center justify-center">
       <div class="panel p-6 sm:p-8">
@@ -129,7 +120,7 @@ const confirmDelete = async (item: any) => {
   const ok = confirm(
     t("home.confirm_delete", {
       label: item.label,
-    })
+    }),
   );
   if (!ok) return;
 

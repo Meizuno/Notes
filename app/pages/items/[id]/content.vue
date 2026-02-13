@@ -1,31 +1,41 @@
 <template>
-  <div class="flex h-full flex-col gap-4">
+  <div class="flex h-full flex-col gap-2 sm:gap-4">
     <div class="panel">
-      <div class="flex items-center justify-between px-8 py-4">
+      <div class="flex items-center justify-between px-4 py-2 sm:px-6 sm:py-4">
         <div class="flex-1">
           <h1 v-if="!editable" class="page-title text-xl">
             {{ item?.label || t("items.note") }}
           </h1>
-          <UInput
-            v-else
-            v-model="nameDraft"
-            class="min-w-56 max-w-sm"
+          <UInput v-else v-model="nameDraft" class="min-w-56 max-w-sm" />
+        </div>
+        <div v-if="editable" class="flex gap-3">
+          <UButton
+            variant="subtle"
+            icon="i-material-symbols-close-rounded"
+            color="neutral"
+            class="rounded-full"
+            @click="cancel"
+          />
+          <UButton
+            variant="subtle"
+            icon="i-material-symbols-check-rounded"
+            color="primary"
+            class="rounded-full"
+            @click="save"
           />
         </div>
         <UButton
-          v-if="!editable"
+          v-else
           variant="subtle"
           icon="i-material-symbols-edit-rounded"
-          color="secondary"
-          class="hidden sm:flex"
+          color="primary"
+          class="rounded-full sm:hidden"
           @click="edit"
-        >
-          {{ t("ui.edit") }}
-        </UButton>
+        />
       </div>
     </div>
 
-    <div class="panel py-4">
+    <div class="panel p-4">
       <EditorNote
         v-model="content"
         :editable="editable"
@@ -34,41 +44,14 @@
       />
     </div>
 
-    <div class="floating-actions">
-      <div v-if="editable" class="flex gap-3">
-        <UButton
-          variant="subtle"
-          icon="i-material-symbols-close-rounded"
-          color="neutral"
-          size="xl"
-          class="rounded-full"
-          @click="cancel"
-        />
-        <UButton
-          variant="solid"
-          icon="i-material-symbols-check-rounded"
-          color="primary"
-          size="xl"
-          class="rounded-full"
-          @click="save"
-        />
-      </div>
-      <UButton
-        v-else
-        variant="solid"
-        icon="i-material-symbols-edit-rounded"
-        color="primary"
-        size="xl"
-        class="rounded-full sm:hidden"
-        @click="edit"
-      />
-    </div>
-
     <UAlert
       variant="subtle"
       :color="editable ? 'success' : 'info'"
       :title="editable ? t('ui.edit_mode') : t('ui.read_mode')"
-      class="sticky bottom-4"
+      class="sticky bottom-2 z-10"
+      :ui="{
+        root: 'p-1 text-center',
+      }"
     />
   </div>
 </template>
@@ -128,7 +111,7 @@ const save = async () => {
       const parentId =
         "parentId" in item.value
           ? item.value.parentId
-          : (item.value as any).parent_id ?? null;
+          : ((item.value as any).parent_id ?? null);
 
       await $fetch(`/api/items/${item.value.id}`, {
         method: "PUT",
