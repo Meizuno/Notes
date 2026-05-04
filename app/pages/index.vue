@@ -380,9 +380,22 @@ onBeforeUnmount(() => {
       </g>
     </svg>
 
-    <p v-if="!nodes.length" class="absolute inset-0 grid place-items-center text-muted text-sm pointer-events-none">
-      Loading graph…
-    </p>
+    <!-- Empty state. `useFetch` is awaited above so by the time this
+         renders we're past the loading phase — `nodes.length === 0`
+         truly means no notes in the vault yet. -->
+    <div v-if="!nodes.length" class="absolute inset-0 grid place-items-center">
+      <div class="flex flex-col items-center gap-3 text-center px-4">
+        <UIcon name="i-lucide-network" class="size-10 text-muted" />
+        <p class="text-sm text-muted">No notes yet</p>
+        <UButton
+          to="/notes/new"
+          icon="i-lucide-plus"
+          label="Create your first note"
+          size="sm"
+          color="primary"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
