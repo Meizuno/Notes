@@ -1,0 +1,57 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("NUXT_DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+// Shared knowledge base: any authenticated user can read, create,
+// edit, or delete any Note. `user_id` on Note is a creator stamp, not
+// an ACL gate.
+//
+// Notes are grouped by `folder` (slash-separated path). Folders are
+// implicit — never stored as rows; the sidebar tree is derived from
+// the unique prefixes across all non-deleted notes.
+model Note {
+  id         Int      @id @default(autoincrement())
+  user_id    String
+  title      String   @db.VarChar(300)
+  folder     String?  @db.VarChar(500)
+  content    String   @default("") @db.Text
+  is_deleted Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  links_from NoteLink[] @relation("from")
+  links_to   NoteLink[] @relation("to")
+
+  @@index([user_id])
+  @@index([is_deleted])
+  @@index([folder])
+  @@index([title(ops: raw("gin_trgm_ops"))],   type: Gin)
+  @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("notes")
+}
+
+// Wiki-link index. Rebuilt on every Note save by parsing the markdown
+// for `[[Title]]` references. `to_id` is null when the target title
+// doesn't exist yet — Obsidian draws those as dimmed nodes in the
+// graph, and they resolve automatically once a note with that title
+// is created.
+model NoteLink {
+  from_id  Int
+  to_title String  @db.VarChar(300)
+  to_id    Int?
+
+  from     Note  @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
+  to       Note? @relation("to",   fields: [to_id],   references: [id], onDelete: SetNull)
+
+  @@id([from_id, to_title])
+  @@index([to_id])
+  @@index([to_title])
+  @@map("note_links")
+}
