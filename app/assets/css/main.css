@@ -82,4 +82,112 @@
   overflow: hidden;
 }
 
+/* ───── Block palette ─────────────────────────────────────────────
+   Each markdown block type gets its own accent so a long note reads
+   like a layered document rather than a wall of text. Backgrounds
+   use solid hues at low alpha (so they tint cleanly in both light
+   and dark mode); borders, markers, and inline pills go full
+   saturation. The hue assignment is intentional, not random:
+     headings descend through the spectrum (indigo → violet → cyan →
+       teal → emerald → amber) so depth reads at a glance
+     blockquote = amber  (a "highlight" tone, like a sticky note)
+     inline code = rose  (so it pops against running text)
+     code block = slate  (kept calm so syntax highlighting wins)
+     hr = indigo→violet gradient (mirrors the favicon)
+     table head = indigo tint (calls out the header row)
+     ul markers = indigo (primary), ol markers = violet (secondary)
+     links = indigo → violet on hover
+   ─────────────────────────────────────────────────────────────── */
+
+.prose h1 { color: rgb(99 102 241); }   /* indigo-500 */
+.prose h2 { color: rgb(139 92 246); }   /* violet-500 */
+.prose h3 { color: rgb(8 145 178); }    /* cyan-600  */
+.prose h4 { color: rgb(13 148 136); }   /* teal-600  */
+.prose h5 { color: rgb(5 150 105); }    /* emerald-600 */
+.prose h6 { color: rgb(217 119 6); }    /* amber-600 */
+.dark .prose h1 { color: rgb(165 180 252); }
+.dark .prose h2 { color: rgb(196 181 253); }
+.dark .prose h3 { color: rgb(103 232 249); }
+.dark .prose h4 { color: rgb(94 234 212); }
+.dark .prose h5 { color: rgb(110 231 183); }
+.dark .prose h6 { color: rgb(252 211 77); }
+
+.prose blockquote {
+  border-left: 4px solid rgb(245 158 11);   /* amber-500 */
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.75rem 1rem;
+  font-style: normal;
+  color: inherit;
+}
+.prose blockquote :where(p):first-child { margin-top: 0; }
+.prose blockquote :where(p):last-child  { margin-bottom: 0; }
+
+/* Inline code only (`pre code` is the syntax-highlighted block,
+   styled separately). */
+.prose :where(code):not(pre code) {
+  background: rgba(244, 63, 94, 0.12);     /* rose-500 / 12% */
+  color: rgb(225 29 72);                   /* rose-600 */
+  padding: 0.1em 0.4em;
+  border-radius: 0.35em;
+  font-size: 0.88em;
+  font-weight: 500;
+}
+.prose :where(code):not(pre code)::before,
+.prose :where(code):not(pre code)::after {
+  content: none;                           /* drop prose's default backticks */
+}
+.dark .prose :where(code):not(pre code) {
+  background: rgba(244, 63, 94, 0.18);
+  color: rgb(253 164 175);                 /* rose-300 */
+}
+
+.prose pre {
+  background: rgb(15 23 42);               /* slate-900 */
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.6rem;
+}
+
+.prose :where(ul):not(.contains-task-list) > li::marker {
+  color: rgb(99 102 241);
+}
+.prose :where(ol) > li::marker {
+  color: rgb(139 92 246);
+  font-weight: 600;
+}
+
+.prose hr {
+  height: 2px;
+  border: 0;
+  background: linear-gradient(to right,
+    rgba(99, 102, 241, 0) 0%,
+    rgb(99 102 241) 30%,
+    rgb(139 92 246) 70%,
+    rgba(139, 92, 246, 0) 100%);
+}
+
+.prose thead { background: rgba(99, 102, 241, 0.1); }
+.prose th {
+  color: rgb(67 56 202);                   /* indigo-700 */
+  font-weight: 600;
+}
+.dark .prose th { color: rgb(165 180 252); }
+.prose tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.06);   /* subtle zebra */
+}
+
+.prose a {
+  color: rgb(2 132 199);                    /* sky-600 — distinct from
+                                               h1's indigo so links and
+                                               headings don't blur together */
+  text-decoration-color: rgba(2, 132, 199, 0.4);
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+.prose a:hover {
+  color: rgb(3 105 161);                    /* sky-700 */
+  text-decoration-color: rgb(3 105 161);
+}
+.dark .prose a       { color: rgb(56 189 248); }   /* sky-400 */
+.dark .prose a:hover { color: rgb(125 211 252); }  /* sky-300 */
+
 @source inline("bg-cyan-500 bg-cyan-500/10 bg-cyan-500/20 text-cyan-600 text-cyan-400 bg-violet-500 bg-violet-500/10 bg-violet-500/20 text-violet-600 text-violet-400 bg-amber-500 bg-amber-500/10 bg-amber-500/20 text-amber-600 text-amber-400 bg-emerald-500 bg-emerald-500/10 bg-emerald-500/20 text-emerald-600 text-emerald-400 bg-rose-500 bg-rose-500/10 bg-rose-500/20 text-rose-600 text-rose-400 bg-sky-500 bg-sky-500/10 bg-sky-500/20 text-sky-600 text-sky-400 bg-indigo-500 bg-indigo-500/10 bg-indigo-500/20 text-indigo-600 text-indigo-400 bg-pink-500 bg-pink-500/10 bg-pink-500/20 text-pink-600 text-pink-400 bg-orange-500 bg-orange-500/10 bg-orange-500/20 text-orange-600 text-orange-400 bg-teal-500 bg-teal-500/10 bg-teal-500/20 text-teal-600 text-teal-400 bg-lime-500 bg-lime-500/10 bg-lime-500/20 text-lime-600 text-lime-400 bg-red-500 bg-red-500/10 bg-red-500/20 text-red-600 text-red-400 bg-green-500 bg-green-500/10 bg-green-500/20 text-green-600 text-green-400 bg-blue-500 bg-blue-500/10 bg-blue-500/20 text-blue-600 text-blue-400 bg-purple-500 bg-purple-500/10 bg-purple-500/20 text-purple-600 text-purple-400 bg-yellow-500 bg-yellow-500/10 bg-yellow-500/20 text-yellow-600 text-yellow-400");
