@@ -22,7 +22,7 @@ const userMenuItems = computed(() => [
 </script>
 
 <template>
-  <header class="flex items-center gap-2 px-3 py-1.5 bg-default border-b border-default shrink-0">
+  <header class="flex items-center gap-2 px-3 py-1.5 bg-default dark:bg-[#3D4452] border-b border-default shrink-0">
     <NuxtLink
       to="/"
       class="flex items-center gap-2 hover:opacity-80 transition-opacity"

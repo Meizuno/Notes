@@ -1,6 +1,103 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* ───── Nord palette ──────────────────────────────────────────────
+   Arctic Ice Studio's Nord, exposed as CSS custom properties so the
+   markdown styling below — and any other component that wants a
+   Nord accent — can reference them by name instead of repeating
+   hex codes. Four groups: Polar Night (dark surfaces), Snow Storm
+   (light surfaces / fg), Frost (the iconic blues), Aurora (warm
+   accents). Source: https://www.nordtheme.com
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --nord-0:  #2E3440;   /* Polar Night - deepest */
+  --nord-1:  #3B4252;
+  --nord-2:  #434C5E;
+  --nord-3:  #4C566A;   /* Polar Night - lightest (muted text on dark) */
+  --nord-4:  #D8DEE9;   /* Snow Storm - foreground on dark */
+  --nord-5:  #E5E9F0;
+  --nord-6:  #ECEFF4;   /* Snow Storm - lightest bg */
+  --nord-7:  #8FBCBB;   /* Frost - teal */
+  --nord-8:  #88C0D0;   /* Frost - light blue (signature accent) */
+  --nord-9:  #81A1C1;   /* Frost - mid blue */
+  --nord-10: #5E81AC;   /* Frost - deep blue */
+  --nord-11: #BF616A;   /* Aurora - red */
+  --nord-12: #D08770;   /* Aurora - orange */
+  --nord-13: #EBCB8B;   /* Aurora - yellow */
+  --nord-14: #A3BE8C;   /* Aurora - green */
+  --nord-15: #B48EAD;   /* Aurora - purple */
+}
+
+/* App surface — Snow Storm in light mode, Polar Night in dark mode,
+   matching Obsidian's own Nord behaviour. We override Nuxt UI's
+   neutral tokens so every component (sidebar, buttons, inputs,
+   menus, etc.) follows the palette without per-component tweaks. */
+:root {
+  --ui-bg:          var(--nord-6);
+  --ui-bg-muted:    var(--nord-5);
+  --ui-bg-elevated: var(--nord-5);
+  --ui-bg-accented: var(--nord-4);
+  --ui-text:           var(--nord-0);
+  --ui-text-muted:     var(--nord-3);
+  --ui-text-toned:     var(--nord-3);
+  --ui-text-dimmed:    var(--nord-3);
+  --ui-text-highlighted: var(--nord-0);
+  --ui-border:          var(--nord-4);
+  --ui-border-muted:    var(--nord-5);
+  --ui-border-accented: var(--nord-3);
+  /* Primary = deep Frost blue. The full 50–950 ramp Nuxt UI uses for
+     hover / focus / muted states is generated from `sky` (closest
+     Tailwind palette); this override pins the canonical 500 shade
+     to Obsidian's exact Nord hex. */
+  --ui-primary:        var(--nord-10);
+  --ui-color-primary-50:  #ECEFF4;
+  --ui-color-primary-100: #D8DEE9;
+  --ui-color-primary-200: #B7C2D2;
+  --ui-color-primary-300: #97A8BC;
+  --ui-color-primary-400: #81A1C1;   /* nord-9  */
+  --ui-color-primary-500: #5E81AC;   /* nord-10 */
+  --ui-color-primary-600: #4D6E96;
+  --ui-color-primary-700: #3F5C7E;
+  --ui-color-primary-800: #344A66;
+  --ui-color-primary-900: #2A3B52;
+  --ui-color-primary-950: #1F2C3D;
+}
+.dark {
+  /* Slightly cooler/darker than canonical --nord-0 (#2E3440) — picked
+     from a screenshot the user supplied. Only --ui-bg is shifted; the
+     elevated / muted / accented surfaces still climb the Nord ramp so
+     contrast between layers remains correct. */
+  --ui-bg:          #2A2F3B;
+  --ui-bg-muted:    var(--nord-1);
+  --ui-bg-elevated: var(--nord-1);
+  --ui-bg-accented: var(--nord-2);
+  --ui-text:           var(--nord-6);
+  --ui-text-muted:     var(--nord-4);
+  --ui-text-toned:     var(--nord-4);
+  --ui-text-dimmed:    var(--nord-3);
+  --ui-text-highlighted: var(--nord-6);
+  --ui-border:          var(--nord-2);
+  --ui-border-muted:    var(--nord-1);
+  --ui-border-accented: var(--nord-3);
+  /* On Polar Night the deep `--nord-10` reads as muddy, so dark mode
+     uses the lighter Frost (`--nord-8`) as the primary 500 shade —
+     same call Obsidian's Nord theme makes for its accent. */
+  --ui-primary:        var(--nord-8);
+  --ui-color-primary-400: #A1CDD8;
+  --ui-color-primary-500: #88C0D0;   /* nord-8 */
+  --ui-color-primary-600: #6FA9BA;
+}
+
+/* Inter is Obsidian's default UI font — falling back to system stacks
+   so we don't need a font CDN or self-hosted bundle to look right
+   when Inter is already installed on the OS. */
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+}
+
 /* GFM task list checkboxes inside markdown content. By default the
    prose plugin still renders the `<ul>` bullet next to each task —
    we hide it because the checkbox itself is the marker, and bump
@@ -99,22 +196,21 @@
      links = indigo → violet on hover
    ─────────────────────────────────────────────────────────────── */
 
-.prose h1 { color: rgb(99 102 241); }   /* indigo-500 */
-.prose h2 { color: rgb(139 92 246); }   /* violet-500 */
-.prose h3 { color: rgb(8 145 178); }    /* cyan-600  */
-.prose h4 { color: rgb(13 148 136); }   /* teal-600  */
-.prose h5 { color: rgb(5 150 105); }    /* emerald-600 */
-.prose h6 { color: rgb(217 119 6); }    /* amber-600 */
-.dark .prose h1 { color: rgb(165 180 252); }
-.dark .prose h2 { color: rgb(196 181 253); }
-.dark .prose h3 { color: rgb(103 232 249); }
-.dark .prose h4 { color: rgb(94 234 212); }
-.dark .prose h5 { color: rgb(110 231 183); }
-.dark .prose h6 { color: rgb(252 211 77); }
+/* Headings follow the Obsidian Nord theme's order — Aurora first
+   (red, yellow, green, purple), then Frost (teal, mid-blue). Same
+   colours in light and dark mode; both Aurora and Frost have
+   enough saturation to read on either background. */
+.prose h1 { color: var(--nord-11); }   /* aurora red    */
+.prose h2 { color: var(--nord-13); }   /* aurora yellow */
+.prose h3 { color: var(--nord-14); }   /* aurora green  */
+.prose h4 { color: var(--nord-15); }   /* aurora purple */
+.prose h5 { color: var(--nord-8);  }   /* frost light   */
+.prose h6 { color: var(--nord-9);  }   /* frost mid     */
 
+/* Blockquote — aurora yellow (sticky-note feel). */
 .prose blockquote {
-  border-left: 4px solid rgb(245 158 11);   /* amber-500 */
-  background: rgba(245, 158, 11, 0.08);
+  border-left: 4px solid var(--nord-13);
+  background: rgba(235, 203, 139, 0.08);   /* nord-13 / 8% */
   border-radius: 0 0.5rem 0.5rem 0;
   padding: 0.75rem 1rem;
   font-style: normal;
@@ -123,11 +219,10 @@
 .prose blockquote :where(p):first-child { margin-top: 0; }
 .prose blockquote :where(p):last-child  { margin-bottom: 0; }
 
-/* Inline code only (`pre code` is the syntax-highlighted block,
-   styled separately). */
+/* Inline code — aurora red pill. */
 .prose :where(code):not(pre code) {
-  background: rgba(244, 63, 94, 0.12);     /* rose-500 / 12% */
-  color: rgb(225 29 72);                   /* rose-600 */
+  background: rgba(191, 97, 106, 0.12);    /* nord-11 / 12% */
+  color: var(--nord-11);
   padding: 0.1em 0.4em;
   border-radius: 0.35em;
   font-size: 0.88em;
@@ -138,56 +233,62 @@
   content: none;                           /* drop prose's default backticks */
 }
 .dark .prose :where(code):not(pre code) {
-  background: rgba(244, 63, 94, 0.18);
-  color: rgb(253 164 175);                 /* rose-300 */
+  background: rgba(191, 97, 106, 0.2);
+  color: rgb(212 132 141);                 /* nord-11 lightened ~12% */
 }
 
+/* Code block — Polar Night surface so syntax highlighting wins. */
 .prose pre {
-  background: rgb(15 23 42);               /* slate-900 */
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: var(--nord-0);
+  border: 1px solid rgba(76, 86, 106, 0.4);  /* nord-3 / 40% */
   border-radius: 0.6rem;
 }
 
+/* List markers — light frost for ul, aurora purple for ol so the
+   two list types are immediately distinguishable. */
 .prose :where(ul):not(.contains-task-list) > li::marker {
-  color: rgb(99 102 241);
+  color: var(--nord-8);
 }
 .prose :where(ol) > li::marker {
-  color: rgb(139 92 246);
+  color: var(--nord-15);
   font-weight: 600;
 }
 
+/* Horizontal rule — frost → aurora-purple gradient. */
 .prose hr {
   height: 2px;
   border: 0;
   background: linear-gradient(to right,
-    rgba(99, 102, 241, 0) 0%,
-    rgb(99 102 241) 30%,
-    rgb(139 92 246) 70%,
-    rgba(139, 92, 246, 0) 100%);
+    rgba(94, 129, 172, 0) 0%,
+    var(--nord-10) 30%,
+    var(--nord-15) 70%,
+    rgba(180, 142, 173, 0) 100%);
 }
 
-.prose thead { background: rgba(99, 102, 241, 0.1); }
+/* Tables — frost-tinted header, gentle zebra below. */
+.prose thead { background: rgba(94, 129, 172, 0.12); }   /* nord-10 / 12% */
 .prose th {
-  color: rgb(67 56 202);                   /* indigo-700 */
+  color: var(--nord-10);
   font-weight: 600;
 }
-.dark .prose th { color: rgb(165 180 252); }
+.dark .prose th { color: var(--nord-8); }
 .prose tbody tr:nth-child(even) {
-  background: rgba(148, 163, 184, 0.06);   /* subtle zebra */
+  background: rgba(76, 86, 106, 0.08);     /* nord-3 / 8% */
 }
 
+/* Links — light frost (nord-8). Distinct from h1 (deep frost,
+   nord-10) so headings and inline links don't read as the same
+   accent. Hover shifts toward teal. */
 .prose a {
-  color: rgb(2 132 199);                    /* sky-600 — distinct from
-                                               h1's indigo so links and
-                                               headings don't blur together */
-  text-decoration-color: rgba(2, 132, 199, 0.4);
+  color: var(--nord-8);
+  text-decoration-color: rgba(136, 192, 208, 0.45);
   transition: color 150ms ease, text-decoration-color 150ms ease;
 }
 .prose a:hover {
-  color: rgb(3 105 161);                    /* sky-700 */
-  text-decoration-color: rgb(3 105 161);
+  color: var(--nord-7);
+  text-decoration-color: var(--nord-7);
 }
-.dark .prose a       { color: rgb(56 189 248); }   /* sky-400 */
-.dark .prose a:hover { color: rgb(125 211 252); }  /* sky-300 */
+.dark .prose a       { color: var(--nord-8); }
+.dark .prose a:hover { color: var(--nord-7); }
 
 @source inline("bg-cyan-500 bg-cyan-500/10 bg-cyan-500/20 text-cyan-600 text-cyan-400 bg-violet-500 bg-violet-500/10 bg-violet-500/20 text-violet-600 text-violet-400 bg-amber-500 bg-amber-500/10 bg-amber-500/20 text-amber-600 text-amber-400 bg-emerald-500 bg-emerald-500/10 bg-emerald-500/20 text-emerald-600 text-emerald-400 bg-rose-500 bg-rose-500/10 bg-rose-500/20 text-rose-600 text-rose-400 bg-sky-500 bg-sky-500/10 bg-sky-500/20 text-sky-600 text-sky-400 bg-indigo-500 bg-indigo-500/10 bg-indigo-500/20 text-indigo-600 text-indigo-400 bg-pink-500 bg-pink-500/10 bg-pink-500/20 text-pink-600 text-pink-400 bg-orange-500 bg-orange-500/10 bg-orange-500/20 text-orange-600 text-orange-400 bg-teal-500 bg-teal-500/10 bg-teal-500/20 text-teal-600 text-teal-400 bg-lime-500 bg-lime-500/10 bg-lime-500/20 text-lime-600 text-lime-400 bg-red-500 bg-red-500/10 bg-red-500/20 text-red-600 text-red-400 bg-green-500 bg-green-500/10 bg-green-500/20 text-green-600 text-green-400 bg-blue-500 bg-blue-500/10 bg-blue-500/20 text-blue-600 text-blue-400 bg-purple-500 bg-purple-500/10 bg-purple-500/20 text-purple-600 text-purple-400 bg-yellow-500 bg-yellow-500/10 bg-yellow-500/20 text-yellow-600 text-yellow-400");
