@@ -33,7 +33,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    authServiceUrl: ''
+    authServiceUrl: '',
+    // Shared secret ai-chat presents as `x-api-key` when calling
+    // /api/prompts/* endpoints on behalf of a user. Empty in dev
+    // disables API-key auth; the prompt endpoints fall back to the
+    // user session in that case.
+    mcpApiKey: ''
   },
 
   nitro: {
