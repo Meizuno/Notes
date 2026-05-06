@@ -94,8 +94,8 @@ const PALETTE = [
   '#6366f1', // indigo
   '#14b8a6'  // teal
 ]
-const ROOT_NODE = '#94a3b8'
-const DANGLING_NODE = '#475569'
+const ROOT_NODE = '#64748b'      // slate-500 — visible on both light and dark bg
+const DANGLING_NODE = '#cbd5e1'  // slate-300 — softer "missing" tone for light mode
 
 function hashStr(s: string): number {
   let h = 0
@@ -400,11 +400,14 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* All chrome (background, edges, label fill/stroke) is wired to Nuxt
+   UI design tokens so the graph follows the app's neutral palette and
+   light/dark theme automatically — no hardcoded slate values. */
 .graph-root {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: rgb(15 23 42);  /* slate-900 */
+  background-color: var(--ui-bg);
   cursor: grab;
   overflow: hidden;
   user-select: none;
@@ -413,12 +416,12 @@ onBeforeUnmount(() => {
 .graph-root:active { cursor: grabbing; }
 
 .edge {
-  stroke: rgba(148, 163, 184, 0.35);  /* slate-400 @ 35% */
+  stroke: var(--ui-border-accented);
   stroke-width: 1;
   pointer-events: none;
   transition: stroke-opacity 200ms ease-out;
 }
-.edge-faded { stroke-opacity: 0.15; }
+.edge-faded { stroke-opacity: 0.2; }
 
 .node {
   cursor: pointer;
@@ -426,10 +429,10 @@ onBeforeUnmount(() => {
 }
 
 .label {
-  fill: rgb(226 232 240);  /* slate-200 */
+  fill: var(--ui-text);
   pointer-events: none;
   paint-order: stroke;
-  stroke: rgb(15 23 42);
+  stroke: var(--ui-bg);
   stroke-width: 3;
   stroke-linejoin: round;
   transition: opacity 200ms ease-out;
