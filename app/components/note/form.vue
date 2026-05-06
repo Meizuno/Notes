@@ -25,9 +25,7 @@ const toast = useToast()
 // Folder suggestions: every existing folder path plus its parent
 // prefixes. Reuses the sidebar's cached fetch (same `key`) so no
 // extra HTTP round-trip.
-const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree', {
-  key: 'sidebar-tree'
-})
+const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree')
 
 const folderOptions = computed(() => {
   const set = new Set<string>()

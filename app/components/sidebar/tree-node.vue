@@ -37,13 +37,13 @@ const indentPx = computed(() => 8 + props.depth * 12)
     >
       <UIcon
         :name="isExpanded ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-        class="size-3 shrink-0"
+        class="size-3.5 shrink-0"
       />
       <UIcon
         :name="isExpanded ? 'i-lucide-folder-open' : 'i-lucide-folder'"
-        class="size-3.5 shrink-0"
+        class="size-4 shrink-0"
       />
-      <span class="truncate text-xs">{{ node.name }}</span>
+      <span class="truncate text-sm">{{ node.name }}</span>
     </button>
 
     <!-- Note row -->
@@ -56,8 +56,8 @@ const indentPx = computed(() => 8 + props.depth * 12)
         : 'text-default/85 hover:bg-elevated hover:text-default'"
       :style="{ paddingLeft: `${indentPx + 16}px` }"
     >
-      <UIcon name="i-lucide-file-text" class="size-3.5 shrink-0 text-muted" />
-      <span class="truncate text-xs">{{ node.name }}</span>
+      <UIcon name="i-lucide-file-text" class="size-4 shrink-0 text-muted" />
+      <span class="truncate text-sm">{{ node.name }}</span>
     </NuxtLink>
 
     <!-- Children -->

@@ -1,4 +1,85 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* GFM task list checkboxes inside markdown content. By default the
+   prose plugin still renders the `<ul>` bullet next to each task —
+   we hide it because the checkbox itself is the marker, and bump
+   the checkbox up so it's actually clickable on touch. Applies to
+   every prose surface (note view, edit preview, ai-chat note card). */
+.prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.prose li.task-list-item {
+  padding-left: 0;
+  margin-left: 0;
+}
+.prose li.task-list-item::marker,
+.prose li.task-list-item::before {
+  content: none;
+}
+.prose li.task-list-item > input[type="checkbox"] {
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.5em;
+  vertical-align: -0.2em;
+  accent-color: var(--ui-primary);
+  cursor: pointer;
+}
+
+/* Foldable headings inside markdown content. The .kb-foldable class,
+   a child <span class="kb-fold-chevron"> with an inline SVG, and a
+   wrapping <div class="kb-fold-block"> are added by the note view's
+   applyCollapseState() pass. Real DOM elements are used (rather
+   than ::before pseudo-elements) so prose-plugin rules can't
+   clobber them. */
+.prose :where(h1, h2, h3, h4, h5, h6).kb-foldable {
+  cursor: pointer;
+}
+.prose .kb-fold-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.4em;
+  vertical-align: -0.05em;
+  opacity: 0.5;
+  color: currentColor;
+  transition: transform 200ms ease, opacity 200ms ease;
+  user-select: none;
+}
+.prose .kb-fold-chevron > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.prose :where(h1, h2, h3, h4, h5, h6).kb-foldable:hover .kb-fold-chevron {
+  opacity: 0.9;
+}
+.prose :where(h1, h2, h3, h4, h5, h6).is-collapsed .kb-fold-chevron {
+  transform: rotate(-90deg);
+  opacity: 0.8;
+}
+
+/* Per-block fold container. The grid-template-rows trick lets us
+   transition smoothly between an unknown content height and 0 —
+   no JS measurement of scrollHeight required. The inner element
+   needs `min-height: 0` so it can actually shrink to 0 inside the
+   grid cell, plus `overflow: hidden` to clip during the animation. */
+.prose .kb-fold-block {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 220ms ease, opacity 180ms ease;
+  opacity: 1;
+}
+.prose .kb-fold-block.is-folded {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.prose .kb-fold-block > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
 @source inline("bg-cyan-500 bg-cyan-500/10 bg-cyan-500/20 text-cyan-600 text-cyan-400 bg-violet-500 bg-violet-500/10 bg-violet-500/20 text-violet-600 text-violet-400 bg-amber-500 bg-amber-500/10 bg-amber-500/20 text-amber-600 text-amber-400 bg-emerald-500 bg-emerald-500/10 bg-emerald-500/20 text-emerald-600 text-emerald-400 bg-rose-500 bg-rose-500/10 bg-rose-500/20 text-rose-600 text-rose-400 bg-sky-500 bg-sky-500/10 bg-sky-500/20 text-sky-600 text-sky-400 bg-indigo-500 bg-indigo-500/10 bg-indigo-500/20 text-indigo-600 text-indigo-400 bg-pink-500 bg-pink-500/10 bg-pink-500/20 text-pink-600 text-pink-400 bg-orange-500 bg-orange-500/10 bg-orange-500/20 text-orange-600 text-orange-400 bg-teal-500 bg-teal-500/10 bg-teal-500/20 text-teal-600 text-teal-400 bg-lime-500 bg-lime-500/10 bg-lime-500/20 text-lime-600 text-lime-400 bg-red-500 bg-red-500/10 bg-red-500/20 text-red-600 text-red-400 bg-green-500 bg-green-500/10 bg-green-500/20 text-green-600 text-green-400 bg-blue-500 bg-blue-500/10 bg-blue-500/20 text-blue-600 text-blue-400 bg-purple-500 bg-purple-500/10 bg-purple-500/20 text-purple-600 text-purple-400 bg-yellow-500 bg-yellow-500/10 bg-yellow-500/20 text-yellow-600 text-yellow-400");
