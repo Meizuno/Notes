@@ -45,11 +45,19 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
   // Already authenticated (e.g. by a previous middleware run)
   if (event.context.user) return event.context.user as AuthUser
 
-  // 1. Check Bearer header (MCP clients) or access token cookie or SSR-refreshed token
+  // 1. Check Bearer header (MCP clients), then SSR-refreshed token,
+  //    then the cookie. `ssrRefreshedToken` must take priority over
+  //    the cookie: when an outer page-level middleware refreshes
+  //    during the same render, it sets new cookies on the response
+  //    but the inner SSR fetch still sees the *original* (stale)
+  //    cookie in its forwarded headers. Preferring the cookie there
+  //    would short-circuit the `??` chain on a value that's already
+  //    expired (and whose refresh-pair has been burned), producing a
+  //    spurious 401 on inner /api/auth/me-style calls.
   const header = getHeader(event, 'authorization')
   const accessToken = header?.toLowerCase().startsWith('bearer ')
     ? header.slice(7).trim()
-    : (readCookie(event, 'rb_access') ?? ssrRefreshedToken ?? '')
+    : (ssrRefreshedToken ?? readCookie(event, 'rb_access') ?? '')
 
   const userId = await validateToken(accessToken)
   if (userId) {
