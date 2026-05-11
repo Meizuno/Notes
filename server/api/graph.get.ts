@@ -1,26 +1,34 @@
 import { getPrisma } from '../utils/db'
 
-// Graph endpoint for the home page. Returns every non-deleted note as
-// a node, plus synthetic nodes for `[[Title]]` references that don't
-// resolve to a real note (Obsidian renders these dimmed). Edges come
-// from the `NoteLink` index — already maintained on save, so this
-// endpoint is just two cheap reads.
+// Graph endpoint for the home page. Builds a folder-tree topology:
 //
-// Each node carries its top-level folder so the client can color by
-// group (top folder = color bucket). Dangling nodes have `folder: null`.
+//   - One pseudo-node per unique folder path (a slash-separated
+//     prefix counts as its own folder, so `Programming/Languages`
+//     produces both `Programming` and `Programming/Languages`).
+//   - Each note connects to its leaf folder; each folder pseudo-node
+//     connects to its parent. The result is a forest where notes
+//     cluster around their folder ancestors.
+//
+// The `type` field on each node tells the renderer how to draw it
+// (notes get colour-by-top-folder, folders get a neutral disc).
 //
 // Wire format:
 //   {
-//     nodes: [{ id, title, resolved, folder, links }, ...],
+//     nodes: [{ id, title, type, folder, links }, ...],
 //     edges: [{ source, target }, ...]
 //   }
+// `id` is a number for notes (the DB row id) and a string of the
+// form `folder:<path>` for folder pseudo-nodes. The client doesn't
+// have to care — it treats every id as opaque.
+
+type NodeType = 'note' | 'folder'
 
 type GraphNode = {
   id: number | string
   title: string
-  resolved: boolean
-  folder: string | null
-  links: number
+  type: NodeType
+  folder: string | null     // parent folder path (null = root)
+  links: number             // degree, computed below for sizing
 }
 
 type GraphEdge = {
@@ -28,53 +36,88 @@ type GraphEdge = {
   target: number | string
 }
 
+function folderId(path: string): string {
+  return `folder:${path}`
+}
+
+// "Programming/Languages" → ["Programming", "Programming/Languages"]
+function ancestorPaths(folder: string): string[] {
+  const out: string[] = []
+  let acc = ''
+  for (const part of folder.split('/').filter(Boolean)) {
+    acc = acc ? `${acc}/${part}` : part
+    out.push(acc)
+  }
+  return out
+}
+
+function parentOf(path: string): string | null {
+  const i = path.lastIndexOf('/')
+  return i === -1 ? null : path.slice(0, i)
+}
+
+function leafName(path: string): string {
+  const i = path.lastIndexOf('/')
+  return i === -1 ? path : path.slice(i + 1)
+}
+
 export default defineEventHandler(async (event) => {
   await requireAuthUser(event)
   const db = getPrisma()
 
-  const [notes, links] = await Promise.all([
-    db.note.findMany({
-      where: { is_deleted: false },
-      select: { id: true, title: true, folder: true }
-    }),
-    db.noteLink.findMany({
-      select: { from_id: true, to_id: true, to_title: true }
-    })
-  ])
+  const notes = await db.note.findMany({
+    where: { is_deleted: false },
+    select: { id: true, title: true, folder: true }
+  })
 
-  const realTitles = new Set(notes.map(n => n.title))
+  const nodes: GraphNode[] = []
+  const edges: GraphEdge[] = []
 
-  const nodes: GraphNode[] = notes.map(n => ({
-    id: n.id,
-    title: n.title,
-    resolved: true,
-    folder: n.folder,
-    links: 0
-  }))
-
-  // Synthetic nodes for dangling targets. Deduped by title.
-  const dangling = new Set<string>()
-  for (const link of links) {
-    if (link.to_id == null && !realTitles.has(link.to_title)) {
-      dangling.add(link.to_title)
-    }
+  // Discover every folder path referenced by any note (including
+  // ancestor prefixes — folders are implicit, never stored as rows).
+  const folderPaths = new Set<string>()
+  for (const n of notes) {
+    if (!n.folder) continue
+    for (const p of ancestorPaths(n.folder)) folderPaths.add(p)
   }
-  for (const title of dangling) {
+
+  // Folder pseudo-nodes first so the renderer can paint them under
+  // the note discs when the simulation overlaps.
+  for (const path of folderPaths) {
     nodes.push({
-      id: `dangling:${title}`,
-      title,
-      resolved: false,
-      folder: null,
+      id: folderId(path),
+      title: leafName(path),
+      type: 'folder',
+      folder: parentOf(path),
       links: 0
     })
   }
 
-  const edges: GraphEdge[] = links.map(l => ({
-    source: l.from_id,
-    target: l.to_id ?? `dangling:${l.to_title}`
-  }))
+  // Notes.
+  for (const n of notes) {
+    nodes.push({
+      id: n.id,
+      title: n.title,
+      type: 'note',
+      folder: n.folder,
+      links: 0
+    })
+  }
 
-  // Degree count, used for node sizing on the client.
+  // Note → its leaf folder.
+  for (const n of notes) {
+    if (!n.folder) continue
+    edges.push({ source: n.id, target: folderId(n.folder) })
+  }
+
+  // Folder → its parent folder.
+  for (const path of folderPaths) {
+    const parent = parentOf(path)
+    if (parent === null) continue
+    edges.push({ source: folderId(path), target: folderId(parent) })
+  }
+
+  // Degree count for node sizing.
   const degree = new Map<number | string, number>()
   for (const e of edges) {
     degree.set(e.source, (degree.get(e.source) ?? 0) + 1)

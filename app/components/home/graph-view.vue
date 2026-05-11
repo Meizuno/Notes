@@ -27,7 +27,7 @@ import {
 type Node = SimulationNodeDatum & {
   id: number | string
   title: string
-  resolved: boolean
+  type: 'note' | 'folder'
   folder: string | null
   links: number
 }
@@ -70,16 +70,18 @@ const isEdgeFaded = (e: Edge) => {
 }
 
 function radius(n: Node) {
-  // Scale weakly with link count; resolved nodes are slightly larger
-  // than dangling so they dominate visually.
-  const base = n.resolved ? 5 : 3.5
-  return base + Math.sqrt(n.links) * 1.5
+  // Folder pseudo-nodes scale with how many children point at them
+  // (more children → bigger ring) so the hierarchy is readable at
+  // a glance. Notes get a constant small disc, with a tiny degree
+  // bonus when they happen to be referenced.
+  if (n.type === 'folder') return 6 + Math.sqrt(n.links) * 2
+  return 4 + Math.sqrt(n.links) * 1.2
 }
 
-// Color nodes by their top-level folder. Each unique top-level folder
-// gets a stable color from this palette (cycled by hash of name);
-// notes at the root use the neutral fallback. Dangling nodes (links
-// to non-existent titles) render dimmed regardless.
+// Colour notes by their top-level folder so each "tree" gets a
+// consistent hue. Folder pseudo-nodes use the same hue at a lighter
+// shade so they sit visually behind their notes. Root-level notes
+// (no folder) fall back to neutral.
 const PALETTE = [
   '#06b6d4', // cyan
   '#10b981', // emerald
@@ -92,8 +94,7 @@ const PALETTE = [
   '#6366f1', // indigo
   '#14b8a6'  // teal
 ]
-const ROOT_NODE = '#64748b'      // slate-500 — visible on both light and dark bg
-const DANGLING_NODE = '#cbd5e1'  // slate-300 — softer "missing" tone for light mode
+const ROOT_NODE = '#64748b'      // slate-500 — visible on both themes
 
 function hashStr(s: string): number {
   let h = 0
@@ -101,10 +102,22 @@ function hashStr(s: string): number {
   return Math.abs(h)
 }
 
+function topFolder(n: Node): string {
+  // Notes carry their parent folder in `folder`; folder pseudo-nodes
+  // carry their *parent* path, so to recover the top-level bucket
+  // we read the node id (which is `folder:<full path>`).
+  if (n.type === 'note') {
+    return (n.folder ?? '').split('/')[0] ?? ''
+  }
+  const path = String(n.id).startsWith('folder:')
+    ? String(n.id).slice('folder:'.length)
+    : ''
+  return path.split('/')[0] ?? ''
+}
+
 function nodeFill(n: Node) {
-  if (!n.resolved) return DANGLING_NODE
-  if (!n.folder) return ROOT_NODE
-  const top = n.folder.split('/')[0] ?? ''
+  const top = topFolder(n)
+  if (!top) return ROOT_NODE
   return PALETTE[hashStr(top) % PALETTE.length]!
 }
 
@@ -138,8 +151,24 @@ function startSim() {
   const { sx, sy } = centeringStrengths()
 
   simulation = forceSimulation<Node>(nodes.value)
-    .force('link', forceLink<Node, Edge>(edges.value).id(d => d.id).distance(110).strength(0.4))
-    .force('charge', forceManyBody().strength(-420))
+    // Shorter, stiffer note→folder edges + longer, looser
+    // folder→folder edges. This pulls notes tight around their
+    // folder anchor while letting folder subtrees breathe apart.
+    .force('link', forceLink<Node, Edge>(edges.value)
+      .id(d => d.id)
+      .distance(e => {
+        const s = (typeof e.source === 'object' ? e.source.type : null)
+        const t = (typeof e.target === 'object' ? e.target.type : null)
+        return s === 'folder' && t === 'folder' ? 140 : 70
+      })
+      .strength(e => {
+        const s = (typeof e.source === 'object' ? e.source.type : null)
+        const t = (typeof e.target === 'object' ? e.target.type : null)
+        return s === 'folder' && t === 'folder' ? 0.3 : 0.6
+      })
+    )
+    // Folder nodes push harder so their child clusters don't overlap.
+    .force('charge', forceManyBody<Node>().strength(d => d.type === 'folder' ? -600 : -300))
     .force('x', forceX(width.value / 2).strength(sx))
     .force('y', forceY(height.value / 2).strength(sy))
     .force('collide', forceCollide<Node>().radius(d => radius(d) + 14))
@@ -257,7 +286,8 @@ function onNodePointerUp(node: Node, e: PointerEvent) {
   if (simulation) simulation.alphaTarget(0)
   node.fx = null
   node.fy = null
-  if (!dragState.value.moved && node.resolved) {
+  // Only note clicks navigate; folder pseudo-nodes are structural.
+  if (!dragState.value.moved && node.type === 'note') {
     navigateTo(`/notes/${node.id}`)
   }
   dragState.value = null
@@ -324,20 +354,25 @@ onBeforeUnmount(() => {
           @pointerup="onNodePointerUp(n, $event)"
           @pointercancel="onNodePointerUp(n, $event)"
         >
+          <!-- Folder nodes get a stroke ring + lower fill opacity so
+               they read as "structural" rather than "navigable." -->
           <circle
             :cx="n.x ?? 0"
             :cy="n.y ?? 0"
             :r="radius(n)"
             :fill="nodeFill(n)"
-            :stroke="n.resolved ? 'transparent' : '#64748b'"
-            :stroke-width="n.resolved ? 0 : 1"
+            :fill-opacity="n.type === 'folder' ? 0.25 : 1"
+            :stroke="n.type === 'folder' ? nodeFill(n) : 'transparent'"
+            :stroke-width="n.type === 'folder' ? 2 : 0"
             class="node"
+            :class="{ 'node-folder': n.type === 'folder' }"
           />
           <text
             :x="n.x ?? 0"
             :y="(n.y ?? 0) + radius(n) + 12"
             text-anchor="middle"
             class="label"
+            :class="{ 'label-folder': n.type === 'folder' }"
             :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px` }"
           >{{ n.title }}</text>
         </g>
@@ -385,6 +420,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: opacity 200ms ease-out, r 200ms ease-out;
 }
+.node-folder {
+  cursor: grab;
+}
 
 .label {
   fill: var(--ui-text);
@@ -394,6 +432,10 @@ onBeforeUnmount(() => {
   stroke-width: 3;
   stroke-linejoin: round;
   transition: opacity 200ms ease-out;
+}
+.label-folder {
+  font-weight: 600;
+  fill: var(--ui-text-muted);
 }
 
 .node-faded .node,
