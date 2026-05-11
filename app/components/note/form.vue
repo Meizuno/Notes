@@ -59,15 +59,27 @@ function onSubmit() {
 <template>
   <form class="flex flex-col gap-4 h-full" @submit.prevent="onSubmit">
     <UInput v-model="title" placeholder="Note title" size="lg" class="shrink-0" />
-    <UInputMenu
-      v-model="folder"
-      :items="folderOptions"
-      placeholder="Folder (e.g. Programming/Languages, leave empty for root)"
-      icon="i-lucide-folder"
-      size="sm"
-      create-item
-      class="shrink-0"
-    />
+    <div class="shrink-0">
+      <UInput
+        v-model="folder"
+        placeholder="Folder (e.g. Programming/Languages, leave empty for root)"
+        icon="i-lucide-folder"
+        size="sm"
+        list="folder-suggestions"
+        autocomplete="off"
+        class="w-full"
+      />
+      <!-- Native autocomplete: the browser shows a dropdown of
+           existing folders as the user types, but the field still
+           accepts any free-form text, so creating a brand new path
+           is "type it and submit." Slashes nest folders implicitly. -->
+      <datalist id="folder-suggestions">
+        <option v-for="opt in folderOptions" :key="opt" :value="opt" />
+      </datalist>
+      <p class="text-xs text-muted mt-1 px-1">
+        Type any path — slashes nest (e.g. <span class="font-mono">Programming/Languages</span>). Existing folders autocomplete. Leave empty for root.
+      </p>
+    </div>
 
     <!-- Mode toggle + actions -->
     <div class="flex items-center shrink-0">
