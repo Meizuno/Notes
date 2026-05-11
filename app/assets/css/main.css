@@ -161,12 +161,17 @@ html, body {
 
 /* Per-block fold container. The grid-template-rows trick lets us
    transition smoothly between an unknown content height and 0 —
-   no JS measurement of scrollHeight required. The inner element
-   needs `min-height: 0` so it can actually shrink to 0 inside the
-   grid cell, plus `overflow: hidden` to clip during the animation. */
+   no JS measurement of scrollHeight required.
+   - `overflow: hidden` on the wrapper clips the child's margins,
+     which would otherwise leak around the 0-height grid track and
+     leave a visible ~1.4em gap per folded block.
+   - The inner element gets `min-height: 0` so it can actually
+     shrink inside the cell, plus its own `overflow: hidden` for
+     anything that wants to bleed out laterally. */
 .prose .kb-fold-block {
   display: grid;
   grid-template-rows: 1fr;
+  overflow: hidden;
   transition: grid-template-rows 220ms ease, opacity 180ms ease;
   opacity: 1;
 }
@@ -177,6 +182,39 @@ html, body {
 .prose .kb-fold-block > * {
   min-height: 0;
   overflow: hidden;
+}
+/* When the wrapper is folded the inner element's prose box still
+   carries margin (handled below) *and* padding/border on elements
+   that style themselves rather than relying on a wrapper —
+   notably `<pre>` (`p-3 + border`) and `<hr>` (`border-top`).
+   Zero all three so the inner box truly renders at 0 height; the
+   wrapper's `overflow: hidden` then clips any rounding artifacts. */
+.prose .kb-fold-block > * {
+  transition: margin 220ms ease, padding 220ms ease, border-width 220ms ease;
+}
+.prose .kb-fold-block.is-folded > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
+}
+
+/* Same treatment for Prose-override wrappers that sit *outside* the
+   kb-fold-block (e.g. ProseTable's overflow-scroller). `:only-child`
+   keeps mixed chunks safe — an expanded heading sitting beside a
+   folded list isn't affected. */
+.prose div:has(> .kb-fold-block:only-child) {
+  transition: margin 220ms ease, padding 220ms ease, border-width 220ms ease;
+}
+.prose div:has(> .kb-fold-block.is-folded:only-child) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
 }
 
 /* ───── Block palette ─────────────────────────────────────────────
@@ -196,21 +234,38 @@ html, body {
      links = indigo → violet on hover
    ─────────────────────────────────────────────────────────────── */
 
-/* Headings follow the Obsidian Nord theme's order — Aurora first
-   (red, yellow, green, purple), then Frost (teal, mid-blue). Same
-   colours in light and dark mode; both Aurora and Frost have
-   enough saturation to read on either background. */
-.prose h1 { color: var(--nord-11); }   /* aurora red    */
-.prose h2 { color: var(--nord-13); }   /* aurora yellow */
-.prose h3 { color: var(--nord-14); }   /* aurora green  */
-.prose h4 { color: var(--nord-15); }   /* aurora purple */
-.prose h5 { color: var(--nord-8);  }   /* frost light   */
-.prose h6 { color: var(--nord-9);  }   /* frost mid     */
+/* Headings follow Obsidian Nord's hue order — Aurora red → yellow →
+   green → purple, then Frost light → mid. Each mode picks the shade
+   of that hue that actually reads against its background:
+     - light: darker variants (deep aurora / nord-10) so they stand
+       out on a near-white Snow Storm surface
+     - dark:  the canonical Nord 11–15 / nord-8/9 you've been using
+       on Polar Night.
+   The hue itself is the same in both modes — same red is red — only
+   the lightness shifts. */
 
-/* Blockquote — aurora yellow (sticky-note feel). */
+/* light */
+.prose h1 { color: #9A4047; }              /* nord-11 darkened ~22% */
+.prose h2 { color: #9F7B2C; }              /* nord-13 darkened ~32% — reads as deep amber rather than washed yellow */
+.prose h3 { color: #6F9559; }              /* nord-14 darkened ~22% */
+.prose h4 { color: #8B6582; }              /* nord-15 darkened ~22% */
+.prose h5 { color: var(--nord-10); }       /* nord-10 already dark, perfect on light */
+.prose h6 { color: #4E6B8F; }              /* nord-9 darkened ~20% */
+
+/* dark — restore the canonical Aurora/Frost on Polar Night */
+.dark .prose h1 { color: var(--nord-11); }
+.dark .prose h2 { color: var(--nord-13); }
+.dark .prose h3 { color: var(--nord-14); }
+.dark .prose h4 { color: var(--nord-15); }
+.dark .prose h5 { color: var(--nord-8);  }
+.dark .prose h6 { color: var(--nord-9);  }
+
+/* Blockquote — aurora yellow (sticky-note feel). Light mode needs a
+   stronger wash + a darker border or the whole thing disappears
+   into the snow-storm bg. */
 .prose blockquote {
-  border-left: 4px solid var(--nord-13);
-  background: rgba(235, 203, 139, 0.08);   /* nord-13 / 8% */
+  border-left: 4px solid #C9A14B;           /* nord-13 darkened ~22% */
+  background: rgba(235, 203, 139, 0.22);    /* nord-13 / 22% on light */
   border-radius: 0 0.5rem 0.5rem 0;
   padding: 0.75rem 1rem;
   font-style: normal;
@@ -218,11 +273,17 @@ html, body {
 }
 .prose blockquote :where(p):first-child { margin-top: 0; }
 .prose blockquote :where(p):last-child  { margin-bottom: 0; }
+.dark .prose blockquote {
+  border-left-color: var(--nord-13);
+  background: rgba(235, 203, 139, 0.08);
+}
 
-/* Inline code — aurora red pill. */
+/* Inline code — aurora red pill. Light mode runs a deeper red on a
+   firmer wash so the pill actually has presence; dark mode's 20%
+   wash + lightened red stays. */
 .prose :where(code):not(pre code) {
-  background: rgba(191, 97, 106, 0.12);    /* nord-11 / 12% */
-  color: var(--nord-11);
+  background: rgba(191, 97, 106, 0.18);     /* nord-11 / 18% on light */
+  color: #964148;                            /* nord-11 darkened ~20% */
   padding: 0.1em 0.4em;
   border-radius: 0.35em;
   font-size: 0.88em;
@@ -230,31 +291,51 @@ html, body {
 }
 .prose :where(code):not(pre code)::before,
 .prose :where(code):not(pre code)::after {
-  content: none;                           /* drop prose's default backticks */
+  content: none;
 }
 .dark .prose :where(code):not(pre code) {
   background: rgba(191, 97, 106, 0.2);
-  color: rgb(212 132 141);                 /* nord-11 lightened ~12% */
+  color: rgb(212 132 141);
 }
 
-/* Code block — Polar Night surface so syntax highlighting wins. */
+/* Code block surface — each mode gets a slightly-elevated Nord tier
+   relative to the main bg, so the block reads as a contained
+   "panel" without changing the page's overall lightness:
+     - light: nord-5 panel + nord-4 border on top of nord-6 page bg
+     - dark : polar-night nord-0 panel + soft nord-3 border on top
+       of the deeper #2A2F3B page bg.
+   Token colours come from Shiki (github-light / github-dark), so
+   the panel just frames them. */
 .prose pre {
-  background: var(--nord-0);
-  border: 1px solid rgba(76, 86, 106, 0.4);  /* nord-3 / 40% */
+  background: var(--nord-5);
+  border: 1px solid var(--nord-4);
   border-radius: 0.6rem;
 }
+.dark .prose pre {
+  background: var(--nord-0);
+  border-color: rgba(76, 86, 106, 0.4);   /* nord-3 / 40% */
+}
 
-/* List markers — light frost for ul, aurora purple for ol so the
-   two list types are immediately distinguishable. */
+/* List markers — deep frost for ul on light (nord-8 is too pale on
+   white), aurora purple for ol. Dark mode keeps the light frost for
+   ul so the bullet pops on Polar Night. */
 .prose :where(ul):not(.contains-task-list) > li::marker {
-  color: var(--nord-8);
+  color: var(--nord-10);
 }
 .prose :where(ol) > li::marker {
-  color: var(--nord-15);
+  color: #9A7693;                            /* nord-15 darkened ~15% */
   font-weight: 600;
 }
+.dark .prose :where(ul):not(.contains-task-list) > li::marker {
+  color: var(--nord-8);
+}
+.dark .prose :where(ol) > li::marker {
+  color: var(--nord-15);
+}
 
-/* Horizontal rule — frost → aurora-purple gradient. */
+/* Horizontal rule — frost → aurora-purple gradient. Same colours
+   work on both backgrounds because the middle stops are saturated
+   and the ends are fully transparent. */
 .prose hr {
   height: 2px;
   border: 0;
@@ -266,27 +347,31 @@ html, body {
 }
 
 /* Tables — frost-tinted header, gentle zebra below. */
-.prose thead { background: rgba(94, 129, 172, 0.12); }   /* nord-10 / 12% */
+.prose thead { background: rgba(94, 129, 172, 0.14); }   /* nord-10 / 14% — slightly punchier on light */
 .prose th {
   color: var(--nord-10);
   font-weight: 600;
 }
-.dark .prose th { color: var(--nord-8); }
 .prose tbody tr:nth-child(even) {
-  background: rgba(76, 86, 106, 0.08);     /* nord-3 / 8% */
+  background: rgba(76, 86, 106, 0.06);     /* nord-3 / 6% — subtle on snow storm */
+}
+.dark .prose thead { background: rgba(94, 129, 172, 0.12); }
+.dark .prose th { color: var(--nord-8); }
+.dark .prose tbody tr:nth-child(even) {
+  background: rgba(76, 86, 106, 0.08);
 }
 
-/* Links — light frost (nord-8). Distinct from h1 (deep frost,
-   nord-10) so headings and inline links don't read as the same
-   accent. Hover shifts toward teal. */
+/* Links — deep frost on light (nord-8 looked washed against the
+   Snow Storm bg); light frost on dark. Distinct from H1 in either
+   mode so headings and inline links don't blur together. */
 .prose a {
-  color: var(--nord-8);
-  text-decoration-color: rgba(136, 192, 208, 0.45);
+  color: var(--nord-10);
+  text-decoration-color: rgba(94, 129, 172, 0.4);
   transition: color 150ms ease, text-decoration-color 150ms ease;
 }
 .prose a:hover {
-  color: var(--nord-7);
-  text-decoration-color: var(--nord-7);
+  color: #3F5C7E;                            /* nord-10 darkened — deeper indigo on hover */
+  text-decoration-color: #3F5C7E;
 }
 .dark .prose a       { color: var(--nord-8); }
 .dark .prose a:hover { color: var(--nord-7); }
