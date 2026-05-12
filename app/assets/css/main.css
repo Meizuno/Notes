@@ -181,7 +181,11 @@ html, body {
 }
 .prose .kb-fold-block > * {
   min-height: 0;
-  overflow: hidden;
+  /* `overflow-y: hidden` only — the *wrapper* already clips content
+     during the height transition; clobbering both axes here would
+     also disable the `<pre>`'s own `overflow-x-auto`, leaving long
+     code lines truncated with no scrollbar. */
+  overflow-y: hidden;
 }
 /* When the wrapper is folded the inner element's prose box still
    carries margin (handled below) *and* padding/border on elements
