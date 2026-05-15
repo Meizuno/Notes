@@ -36,7 +36,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/Meizuno/knowledge-base
+          images: ghcr.io/Meizuno/notes
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -65,5 +65,5 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd ~/servers/meizuno
-            docker compose -f docker-compose.yml pull knowledge-base
-            docker compose -f docker-compose.yml up -d knowledge-base
+            docker compose -f docker-compose.yml pull notes
+            docker compose -f docker-compose.yml up -d notes
