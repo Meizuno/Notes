@@ -1,5 +1,5 @@
-// Default prompt endpoint, called by ai-chat as a "Knowledge base
-// overview" suggested prompt. Four modes:
+// Default prompt endpoint, called by ai-chat as a "Notes overview"
+// suggested prompt. Four modes:
 //
 //   GET /api/prompts/notes?id=42
 //     Returns the full content of a single note for inline display.
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
   // Graph view — entire vault rendered as folder tree. Mirrors
   // `/api/graph` so ai-chat can show the same Obsidian-style graph
-  // it would see if logged into knowledge-base directly.
+  // it would see if logged into the notes app directly.
   if (view === 'graph') {
     const allNotes = await db.note.findMany({
       where: { is_deleted: false },

@@ -5,7 +5,7 @@ useHead({
   htmlAttrs: { lang: 'en' }
 })
 
-useSeoMeta({ title: 'Knowledge Base' })
+useSeoMeta({ title: 'Notes' })
 
 const route = useRoute()
 const showShell = computed(() => route.path !== '/login')

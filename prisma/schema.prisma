@@ -9,7 +9,7 @@ datasource db {
   extensions = [pg_trgm]
 }
 
-// Shared knowledge base: any authenticated user can read, create,
+// Shared notes vault: any authenticated user can read, create,
 // edit, or delete any Note. `user_id` on Note is a creator stamp, not
 // an ACL gate.
 //

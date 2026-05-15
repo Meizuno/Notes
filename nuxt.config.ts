@@ -12,7 +12,7 @@ export default defineNuxtConfig({
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Knowledge Base' },
+        { name: 'apple-mobile-web-app-title', content: 'Notes' },
         { name: 'theme-color', content: '#f97316' }
       ]
     }

@@ -15,7 +15,6 @@ export const useAuth = () => {
     }
     catch {}
     user.value = null
-    await navigateTo('/login')
   }
 
   return { user, loggedIn, logout }

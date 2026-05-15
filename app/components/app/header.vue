@@ -33,12 +33,13 @@ const userMenuItems = computed(() => [
         class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
       >
         <img src="/favicon.svg" class="w-5 h-5 shrink-0" alt="logo">
-        <span class="font-semibold text-sm truncate">Knowledge Base</span>
+        <span class="font-semibold text-sm truncate">Notes</span>
       </NuxtLink>
 
       <div class="flex-1" />
 
       <UButton
+        v-if="loggedIn"
         to="/notes/new"
         icon="i-lucide-plus"
         variant="ghost"
@@ -59,6 +60,17 @@ const userMenuItems = computed(() => [
           <UIcon name="i-lucide-chevron-down" class="size-3 text-muted" />
         </UButton>
       </UDropdownMenu>
+
+      <UButton
+        v-else
+        to="/login"
+        icon="i-lucide-log-in"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        label="Log in"
+        class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
+      />
     </div>
   </header>
 </template>

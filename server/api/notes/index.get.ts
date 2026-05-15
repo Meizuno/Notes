@@ -12,7 +12,6 @@
 const DEFAULT_LIMIT = 20
 
 export default defineEventHandler(async (event) => {
-  await requireAuthUser(event)
   const query = getQuery(event)
   const search = query.search ? String(query.search) : ''
   // Optional folder filter — passes a slash-separated prefix and the
@@ -23,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const db = getPrisma()
   const where = {
-    is_deleted: false,
+    ...noteVisibilityWhere(event),
     ...(search ? {
       OR: [
         { title:   { contains: search, mode: 'insensitive' as const } },

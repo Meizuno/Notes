@@ -1,3 +1,4 @@
+import type { H3Event } from 'h3'
 import { getPrisma } from './db'
 
 // Shared note projection used by `/api/notes/[id]` (edit form load).
@@ -13,9 +14,20 @@ export type NoteRow = {
   updated_at: Date
 }
 
-export function loadNote(id: string): Promise<NoteRow | null> {
+// Visibility filter for read endpoints. Anonymous requests are
+// restricted to public notes; authenticated requests see everything
+// non-deleted (shared workspace — any authed user can read any note).
+// Returns a Prisma where-clause fragment.
+export function noteVisibilityWhere(event: H3Event): { is_deleted: false, public?: true } {
+  const authed = Boolean(event.context.user)
+  return authed
+    ? { is_deleted: false }
+    : { is_deleted: false, public: true }
+}
+
+export function loadNote(event: H3Event, id: string): Promise<NoteRow | null> {
   return getPrisma().note.findFirst({
-    where: { id, is_deleted: false },
+    where: { id, ...noteVisibilityWhere(event) },
     select: {
       id: true,
       title: true,

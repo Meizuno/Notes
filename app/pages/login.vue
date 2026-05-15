@@ -14,7 +14,7 @@ const signIn = () => { window.location.href = '/api/auth/google' }
   <div class="flex min-h-screen items-center justify-center">
     <div class="flex flex-col items-center gap-6 w-full max-w-sm px-4">
       <img src="/favicon.svg" class="w-16 h-16" alt="logo">
-      <h1 class="text-2xl font-bold text-highlighted">Knowledge Base</h1>
+      <h1 class="text-2xl font-bold text-highlighted">Notes</h1>
 
       <UAlert
         v-if="error === 'missing_tokens'"

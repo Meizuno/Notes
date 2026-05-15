@@ -3,7 +3,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { getHeader } from 'h3'
 import { registerNoteTools } from '../utils/mcp/notes'
 
-// MCP endpoint exposing read-only access to the knowledge base for
+// MCP endpoint exposing read-only access to the notes vault for
 // ai-chat (and any other MCP client). Two auth paths:
 //   - Trusted service: x-api-key matches NUXT_MCP_API_KEY plus an
 //     x-user-id header → bypass session auth.
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getPrisma()
-  const server = new McpServer({ name: 'knowledge-base', version: '1.0.0' })
+  const server = new McpServer({ name: 'notes', version: '1.0.0' })
 
   registerNoteTools(server, db)
 

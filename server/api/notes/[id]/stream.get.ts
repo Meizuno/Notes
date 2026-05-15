@@ -1,4 +1,5 @@
 import { getPrisma } from '../../../utils/db'
+import { noteVisibilityWhere } from '../../../utils/notes'
 
 // Streaming endpoint for note metadata + markdown content. Sends a
 // single metadata record first so the client can paint the title,
@@ -21,7 +22,7 @@ import { getPrisma } from '../../../utils/db'
 
 const WIKI_RE = /\[\[([^\]]+)\]\]/g
 
-async function expandWikiLinks(content: string) {
+async function expandWikiLinks(content: string, authed: boolean, visibilityWhere: { is_deleted: false, public?: true }) {
   const titles = new Set<string>()
   for (const m of content.matchAll(WIKI_RE)) {
     const t = m[1]?.trim()
@@ -29,8 +30,11 @@ async function expandWikiLinks(content: string) {
   }
   if (!titles.size) return content
 
+  // Anon users only resolve to public targets — private notes stay
+  // invisible. Dangling targets render as plain text for anon (no
+  // create link, since they can't create anyway).
   const targets = await getPrisma().note.findMany({
-    where: { title: { in: [...titles] }, is_deleted: false },
+    where: { title: { in: [...titles] }, ...visibilityWhere },
     select: { id: true, title: true }
   })
   const titleToId = new Map(targets.map(t => [t.title, t.id]))
@@ -39,7 +43,7 @@ async function expandWikiLinks(content: string) {
     const t = String(raw).trim()
     const id = titleToId.get(t)
     if (id) return `[${t}](/notes/${id})`
-    return `[${t}](/notes/new?title=${encodeURIComponent(t)})`
+    return authed ? `[${t}](/notes/new?title=${encodeURIComponent(t)})` : t
   })
 }
 
@@ -64,12 +68,14 @@ function splitMarkdown(content: string): string[] {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireAuthUser(event)
   const id = getRouterParam(event, 'id') ?? ''
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
 
+  const visibilityWhere = noteVisibilityWhere(event)
+  const authed = Boolean(event.context.user)
+
   const note = await getPrisma().note.findFirst({
-    where: { id, is_deleted: false },
+    where: { id, ...visibilityWhere },
     select: {
       id: true,
       title: true,
@@ -90,7 +96,7 @@ export default defineEventHandler(async (event) => {
     folder: note.folder,
     updated_at: note.updated_at
   }
-  const expanded = await expandWikiLinks(note.content)
+  const expanded = await expandWikiLinks(note.content, authed, visibilityWhere)
   const chunks = splitMarkdown(expanded)
   const enc = new TextEncoder()
 

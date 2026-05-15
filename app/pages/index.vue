@@ -7,7 +7,7 @@
 // reloads, plays well with browser back/forward. Defaults to graph
 // when the param is missing or invalid.
 
-useSeoMeta({ title: 'Knowledge Base' })
+useSeoMeta({ title: 'Notes' })
 
 type View = 'graph' | 'tree'
 

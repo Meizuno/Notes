@@ -1,4 +1,4 @@
-// Seeds a small interconnected knowledge-base vault for development.
+// Seeds a small interconnected notes vault for development.
 // Run with: pnpm prisma:seed
 //
 // What you get:
@@ -28,13 +28,13 @@ Landing page for the vault. Hubs:
 - [[Programming]] — language and framework notes
 - [[Books to Read]] — current reading queue
 - [[Daily Notes]] — journaling
-- [[Knowledge Base]] — meta notes about this app
+- [[Notes App]] — meta notes about this app
 
 > Tip: link any note from anywhere with double brackets, e.g. [[TypeScript]].`
   },
   {
-    title: 'Knowledge Base',
-    content: `# Knowledge Base
+    title: 'Notes App',
+    content: `# Notes App
 
 This app. A self-hosted Obsidian-style vault built on [[Nuxt]] + [[Vue]] + [[Prisma]].
 
@@ -107,7 +107,7 @@ Reactive UI framework. Notes here are mostly about Composition API + \`<script s
 - For server-rendered apps, [[Nuxt]] is the default choice.
 - \`defineModel\` removes most v-model boilerplate.
 
-Related: [[Knowledge Base]] is built on Vue + [[Nuxt]].`
+Related: [[Notes App]] is built on Vue + [[Nuxt]].`
   },
   {
     title: 'Nuxt',
@@ -117,7 +117,7 @@ Related: [[Knowledge Base]] is built on Vue + [[Nuxt]].`
 Full-stack Vue framework. SSR, file-based routing, Nitro server, auto-imports.
 
 ## What I use it for
-- [[Knowledge Base]] (this app)
+- [[Notes App]] (this app)
 - Recipe Book (shared-workspace recipe vault)
 
 ## Patterns I keep coming back to
@@ -136,7 +136,7 @@ Plain-text formatting language. Used as the canonical content format in this vau
 - Headings are ATX (\`#\` style).
 - Code fences use triple backticks with a language tag.
 
-The format/repair pass in [[Knowledge Base]] auto-fixes \`-text\` (missing space) and Unicode bullets like • before passing to remark.`
+The format/repair pass in [[Notes App]] auto-fixes \`-text\` (missing space) and Unicode bullets like • before passing to remark.`
   },
   {
     title: 'Prisma',
@@ -149,7 +149,7 @@ TypeScript-first ORM for PostgreSQL (and others). Notes:
 - Use \`select\` over \`include\` to avoid over-fetching.
 - Migrations: \`prisma migrate dev\` for dev, \`prisma migrate deploy\` in prod.
 
-Used by [[Knowledge Base]] for the [[Note]] and NoteLink tables.`
+Used by [[Notes App]] for the [[Note]] and NoteLink tables.`
   },
   {
     title: 'Books to Read',
@@ -227,7 +227,7 @@ Inspirations from [[The Pragmatic Programmer]] and (eventually) [[Atomic Habits]
 
 Park ideas here, promote to a proper note when they grow legs.
 
-- A graph view that animates new links as they appear (matches the [[Knowledge Base]] streaming aesthetic).
+- A graph view that animates new links as they appear (matches the [[Notes App]] streaming aesthetic).
 - A "weekly review" that surfaces orphan notes — anything in the vault with no inbound or outbound links.
 - A keyboard-only quick-switcher (Ctrl+P) over note titles, with [[fuzzy-match]].`
   }

@@ -3,7 +3,7 @@ import type { PrismaClient } from '@prisma/client'
 import { z } from 'zod/v3'
 import { toJson } from './helpers'
 
-// MCP tools for the shared knowledge base. Read-only by design — the
+// MCP tools for the shared notes vault. Read-only by design — the
 // LLM should be able to surface what's in the vault but not silently
 // mutate it. Writes happen through the UI.
 //
@@ -15,7 +15,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient) {
   server.registerTool(
     'list_notes',
     {
-      description: 'List or search notes in the knowledge base. Optional `query` matches against title and content (case-insensitive substring, trigram-indexed); optional `folder` is a slash-separated prefix that also includes nested folders (e.g. "Programming" matches notes in "Programming/Rust"). Returns items (id, title, folder, hasContent, updatedAt, and snippet when a query matched the content), total count, and hasMore flag. Use get_note for full content. Default limit is 20.',
+      description: 'List or search notes in the vault. Optional `query` matches against title and content (case-insensitive substring, trigram-indexed); optional `folder` is a slash-separated prefix that also includes nested folders (e.g. "Programming" matches notes in "Programming/Rust"). Returns items (id, title, folder, hasContent, updatedAt, and snippet when a query matched the content), total count, and hasMore flag. Use get_note for full content. Default limit is 20.',
       inputSchema: z.object({
         query: z.string().optional().describe('Keyword matched against title and content. Omit to list all notes.'),
         folder: z.string().optional().describe('Folder path prefix, e.g. "Programming" or "Programming/Rust". Includes notes in subfolders.'),

@@ -62,11 +62,10 @@ function leafName(path: string): string {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireAuthUser(event)
   const db = getPrisma()
 
   const notes = await db.note.findMany({
-    where: { is_deleted: false },
+    where: noteVisibilityWhere(event),
     select: { id: true, title: true, folder: true }
   })
 

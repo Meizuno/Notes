@@ -3,6 +3,7 @@ type Note = { id: string, title: string, folder: string | null, content: string,
 
 const route = useRoute()
 const id = String(route.params.id)
+const { loggedIn } = useAuth()
 
 // `version` is bumped on every successful edit and used as the `:key`
 // on `<NoteStream>` so the component remounts and re-fetches the
@@ -90,7 +91,7 @@ async function deleteNote() {
            page paints progressively as bytes arrive. The actions
            slot puts Edit/Delete inline with the title row. -->
       <NoteStream :id="id" :key="version">
-        <template #actions>
+        <template v-if="loggedIn" #actions>
           <UButton
             icon="i-lucide-pencil"
             variant="ghost"
