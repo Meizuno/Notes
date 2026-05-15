@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "notes" ALTER COLUMN "id" DROP DEFAULT;
