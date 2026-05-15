@@ -18,7 +18,7 @@ const view = computed<View>({
   get() {
     return route.query.view === 'tree' ? 'tree' : 'graph'
   },
-  set(val) {
+  set(val: View) {
     // `replace` instead of `push` so toggling doesn't pile up
     // history entries the user has to back through.
     router.replace({ query: { ...route.query, view: val } })
@@ -39,14 +39,16 @@ await useFetch('/api/notes/tree', { key: 'sidebar-tree' })
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center justify-end px-2 py-1.5 shrink-0">
-      <UTabs
-        v-model="view"
-        :items="items"
-        :content="false"
-        size="sm"
-        variant="pill"
-      />
+    <div class="px-2 py-1.5 shrink-0">
+      <div class="flex items-center justify-end max-w-3xl mx-auto">
+        <UTabs
+          v-model="view"
+          :items="items"
+          :content="false"
+          size="sm"
+          variant="pill"
+        />
+      </div>
     </div>
 
     <div class="flex-1 min-h-0">

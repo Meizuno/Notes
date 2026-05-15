@@ -1,27 +1,23 @@
 <script setup lang="ts">
-// Full-page tree of the vault — same data + recursion as the sidebar
-// but with breathing room for desktop browsing. Folders default to
-// expanded so the user lands on a complete map; the sidebar's
-// per-session collapsed state is intentionally separate (state key
-// `home-tree-expanded`) so collapsing in one place doesn't affect
-// the other.
+// Full-page tree of the vault, rendered with Nuxt UI's <UTree>.
+// Folders start collapsed (UTree's default). Expand state persists
+// across SPA navigation via a useState key and resets on full reload.
 
 type FlatNote = { id: string, title: string, folder: string | null }
 
-type TreeNode = {
-  type: 'folder' | 'note'
-  name: string
-  fullPath: string
-  noteId?: string
-  children?: TreeNode[]
+type TreeItem = {
+  label: string
+  value: string
+  icon?: string
+  children?: TreeItem[]
+  onSelect?: (e: Event) => void
 }
 
-// Same useFetch key as the sidebar — Nuxt deduplicates so this is a
-// shared SSR payload, no extra round-trip.
 const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree')
-
 const route = useRoute()
-// Note IDs are UUIDs — match any non-slash chars after `/notes/`.
+const router = useRouter()
+
+// Highlight the active note when we're sitting on /notes/<id>.
 const activeNoteId = computed(() => {
   const m = route.path.match(/^\/notes\/([^/]+)/)
   return m && m[1] ? m[1] : null
@@ -31,74 +27,100 @@ const allFolderPaths = computed(() => {
   const paths = new Set<string>()
   for (const n of notes.value ?? []) {
     if (!n.folder) continue
-    let cumulative = ''
+    let acc = ''
     for (const part of n.folder.split('/').filter(Boolean)) {
-      cumulative = cumulative ? `${cumulative}/${part}` : part
-      paths.add(cumulative)
+      acc = acc ? `${acc}/${part}` : part
+      paths.add(acc)
     }
   }
   return paths
 })
 
-// Default to fully expanded — the home page is the "map" view, so
-// hiding folders by default would defeat the purpose. We initialize
-// exactly once per session: the `initialized` flag survives SPA
-// navigation (so coming back doesn't undo a "Collapse all" click)
-// but resets on a full page reload (so a fresh session starts with
-// everything visible again).
-const expanded = useState<Set<string>>('home-tree-expanded', () => new Set())
+// UTree v-model:expanded wants an array of keys. Survives SPA nav;
+// the `initialized` flag means "Collapse all" + leave + come back
+// won't silently re-expand, but a full reload starts fully open again.
+const expanded = useState<string[]>('home-tree-expanded', () => [])
 const initialized = useState('home-tree-initialized', () => false)
 onMounted(() => {
   if (!initialized.value && allFolderPaths.value.size > 0) {
-    expanded.value = new Set(allFolderPaths.value)
+    expanded.value = [...allFolderPaths.value]
     initialized.value = true
   }
 })
 
-function toggleFolder(path: string) {
-  const next = new Set(expanded.value)
-  next.has(path) ? next.delete(path) : next.add(path)
-  expanded.value = next
-}
-
 function toggleExpandAll() {
-  expanded.value = expanded.value.size === 0
-    ? new Set(allFolderPaths.value)
-    : new Set()
+  expanded.value = expanded.value.length === 0
+    ? [...allFolderPaths.value]
+    : []
 }
 
-const tree = computed<TreeNode[]>(() => {
-  const root: TreeNode = { type: 'folder', name: '', fullPath: '', children: [] }
+const items = computed<TreeItem[]>(() => {
+  const root: TreeItem = { label: '', value: '__root__', children: [] }
   for (const n of notes.value ?? []) {
     const parts = n.folder ? n.folder.split('/').filter(Boolean) : []
     let parent = root
-    let cumulative = ''
+    let acc = ''
     for (const part of parts) {
-      cumulative = cumulative ? `${cumulative}/${part}` : part
-      let folder = parent.children!.find(c => c.type === 'folder' && c.name === part)
+      acc = acc ? `${acc}/${part}` : part
+      let folder = parent.children!.find(c => c.children && c.value === acc)
       if (!folder) {
-        folder = { type: 'folder', name: part, fullPath: cumulative, children: [] }
+        folder = {
+          label: part,
+          value: acc,
+          icon: 'i-lucide-folder',
+          children: []
+        }
         parent.children!.push(folder)
       }
       parent = folder
     }
+    // Per-item onSelect: clicks on note rows navigate. Folders have no
+    // onSelect, so clicking them just toggles expand via UTree's
+    // built-in behavior — keeps the routing logic out of the v-model
+    // emit, which gives us the item object (not the value).
+    const noteId = n.id
     parent.children!.push({
-      type: 'note',
-      name: n.title,
-      fullPath: n.folder ? `${n.folder}/${n.title}` : n.title,
-      noteId: n.id
+      label: n.title,
+      value: noteId,
+      icon: 'i-lucide-file-text',
+      onSelect: () => router.push(`/notes/${noteId}`)
     })
   }
-  const sortRecursive = (node: TreeNode) => {
+  const sortRecursive = (node: TreeItem) => {
     if (!node.children) return
     node.children.sort((a, b) => {
-      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
-      return a.name.localeCompare(b.name)
+      const aFolder = !!a.children
+      const bFolder = !!b.children
+      if (aFolder !== bFolder) return aFolder ? -1 : 1
+      return a.label.localeCompare(b.label)
     })
     node.children.forEach(sortRecursive)
   }
   sortRecursive(root)
   return root.children ?? []
+})
+
+// Selection is an item object (reka-ui semantics), not a string. Sync
+// it from the route so the active note row stays highlighted as we
+// navigate. The getKey prop on <UTree> matches items by `value`, so
+// any item with the right value works as the selected reference.
+const selected = ref<TreeItem | undefined>()
+watchEffect(() => {
+  if (!activeNoteId.value) {
+    selected.value = undefined
+    return
+  }
+  const find = (list: TreeItem[]): TreeItem | undefined => {
+    for (const it of list) {
+      if (!it.children && it.value === activeNoteId.value) return it
+      if (it.children) {
+        const f = find(it.children)
+        if (f) return f
+      }
+    }
+    return undefined
+  }
+  selected.value = find(items.value)
 })
 </script>
 
@@ -111,30 +133,25 @@ const tree = computed<TreeNode[]>(() => {
         </span>
         <UButton
           v-if="allFolderPaths.size > 0"
-          :icon="expanded.size === 0 ? 'i-lucide-chevrons-up-down' : 'i-lucide-chevrons-down-up'"
+          :icon="expanded.length === 0 ? 'i-lucide-chevrons-up-down' : 'i-lucide-chevrons-down-up'"
           variant="ghost"
           color="neutral"
           size="xs"
           class="ml-auto"
-          :label="expanded.size === 0 ? 'Expand all' : 'Collapse all'"
+          :label="expanded.length === 0 ? 'Expand all' : 'Collapse all'"
           @click="toggleExpandAll"
         />
       </div>
 
-      <!-- The recursive node component is the same as the sidebar.
-           The wrapper picks up larger text via Tailwind so rows feel
-           appropriately scaled for the main content area. -->
-      <div v-if="tree.length" class="text-base [&_.text-sm]:text-base [&_.size-4]:size-5 [&_.size-3\.5]:size-4">
-        <SidebarTreeNode
-          v-for="node in tree"
-          :key="node.fullPath"
-          :node="node"
-          :depth="0"
-          :expanded="expanded"
-          :active-note-id="activeNoteId"
-          @toggle="toggleFolder"
-        />
-      </div>
+      <UTree
+        v-if="items.length"
+        v-model="selected"
+        v-model:expanded="expanded"
+        :items="items"
+        :get-key="(item: TreeItem) => item.value"
+        size="md"
+        color="primary"
+      />
 
       <div v-else class="grid place-items-center py-20">
         <div class="flex flex-col items-center gap-3 text-center">
@@ -152,3 +169,27 @@ const tree = computed<TreeNode[]>(() => {
     </div>
   </div>
 </template>
+
+<!-- Expand animation. Non-scoped so the rule matches UTree's internal
+     <ul data-slot="listWithChildren">. v-if removes the element on
+     collapse, so only the enter direction animates — acceptable. -->
+<style>
+[data-slot="listWithChildren"] {
+  animation: home-tree-expand 180ms ease-out;
+  transform-origin: top;
+  overflow: hidden;
+}
+@keyframes home-tree-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="listWithChildren"] { animation: none; }
+}
+</style>
