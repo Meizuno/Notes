@@ -7,7 +7,7 @@ type TreeNode = {
   type: 'folder' | 'note'
   name: string
   fullPath: string
-  noteId?: number
+  noteId?: string
   children?: TreeNode[]
 }
 
@@ -15,7 +15,7 @@ const props = defineProps<{
   node: TreeNode
   depth: number
   expanded: Set<string>
-  activeNoteId: number | null
+  activeNoteId: string | null
 }>()
 
 const emit = defineEmits<{ toggle: [path: string] }>()

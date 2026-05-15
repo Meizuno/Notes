@@ -1,6 +1,7 @@
 export default defineEventHandler(async (event) => {
   await requireAuthUser(event)
-  const id = Number(getRouterParam(event, 'id'))
+  const id = getRouterParam(event, 'id') ?? ''
+  if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
   const db = getPrisma()
 
   // Shared workspace — any authenticated user can soft-delete any

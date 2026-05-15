@@ -17,14 +17,14 @@ import { getPrisma } from '../utils/db'
 //     nodes: [{ id, title, type, folder, links }, ...],
 //     edges: [{ source, target }, ...]
 //   }
-// `id` is a number for notes (the DB row id) and a string of the
-// form `folder:<path>` for folder pseudo-nodes. The client doesn't
-// have to care — it treats every id as opaque.
+// `id` is the note's UUID for note nodes and a string of the form
+// `folder:<path>` for folder pseudo-nodes. The client treats every
+// id as opaque.
 
 type NodeType = 'note' | 'folder'
 
 type GraphNode = {
-  id: number | string
+  id: string
   title: string
   type: NodeType
   folder: string | null     // parent folder path (null = root)
@@ -32,8 +32,8 @@ type GraphNode = {
 }
 
 type GraphEdge = {
-  source: number | string
-  target: number | string
+  source: string
+  target: string
 }
 
 function folderId(path: string): string {
@@ -118,7 +118,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Degree count for node sizing.
-  const degree = new Map<number | string, number>()
+  const degree = new Map<string, number>()
   for (const e of edges) {
     degree.set(e.source, (degree.get(e.source) ?? 0) + 1)
     degree.set(e.target, (degree.get(e.target) ?? 0) + 1)

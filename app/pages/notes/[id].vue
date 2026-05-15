@@ -1,8 +1,8 @@
 <script setup lang="ts">
-type Note = { id: number, title: string, folder: string | null, content: string, updated_at: string }
+type Note = { id: string, title: string, folder: string | null, content: string, public: boolean, updated_at: string }
 
 const route = useRoute()
-const id = Number(route.params.id)
+const id = String(route.params.id)
 
 // `version` is bumped on every successful edit and used as the `:key`
 // on `<NoteStream>` so the component remounts and re-fetches the
@@ -16,6 +16,7 @@ const editing = ref(false)
 const editTitle = ref('')
 const editFolder = ref('')
 const editContent = ref('')
+const editPublic = ref(false)
 const saving = ref(false)
 const loadingEdit = ref(false)
 
@@ -27,6 +28,7 @@ async function startEdit() {
     editTitle.value = note.title
     editFolder.value = note.folder ?? ''
     editContent.value = note.content
+    editPublic.value = note.public
     editing.value = true
   }
   finally { loadingEdit.value = false }
@@ -41,7 +43,8 @@ async function saveEdit() {
       body: {
         title: editTitle.value,
         folder: editFolder.value.trim() || null,
-        content: editContent.value
+        content: editContent.value,
+        public: editPublic.value
       }
     })
     version.value++  // remount the stream so it shows the new content
@@ -72,6 +75,7 @@ async function deleteNote() {
         v-model:title="editTitle"
         v-model:folder="editFolder"
         v-model:content="editContent"
+        v-model:public="editPublic"
         :saving="saving"
         submit-label="Save"
         @submit="saveEdit"

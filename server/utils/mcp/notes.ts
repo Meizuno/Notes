@@ -83,7 +83,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient) {
     {
       description: 'Get full note by id. Returns title, content (markdown — may contain wiki-links like [[Other Note]]), folder path, and timestamps.',
       inputSchema: z.object({
-        id: z.number().int().describe('(required) Note ID.')
+        id: z.string().describe('(required) Note UUID.')
       })
     },
     async ({ id }) => {

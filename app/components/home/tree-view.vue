@@ -6,13 +6,13 @@
 // `home-tree-expanded`) so collapsing in one place doesn't affect
 // the other.
 
-type FlatNote = { id: number, title: string, folder: string | null }
+type FlatNote = { id: string, title: string, folder: string | null }
 
 type TreeNode = {
   type: 'folder' | 'note'
   name: string
   fullPath: string
-  noteId?: number
+  noteId?: string
   children?: TreeNode[]
 }
 
@@ -21,9 +21,10 @@ type TreeNode = {
 const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree')
 
 const route = useRoute()
+// Note IDs are UUIDs — match any non-slash chars after `/notes/`.
 const activeNoteId = computed(() => {
-  const m = route.path.match(/^\/notes\/(\d+)/)
-  return m && m[1] ? Number(m[1]) : null
+  const m = route.path.match(/^\/notes\/([^/]+)/)
+  return m && m[1] ? m[1] : null
 })
 
 const allFolderPaths = computed(() => {

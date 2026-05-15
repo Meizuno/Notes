@@ -5,14 +5,15 @@ import { getPrisma } from './db'
 // own select and emits metadata + content over the wire.
 
 export type NoteRow = {
-  id: number
+  id: string
   title: string
   folder: string | null
   content: string
+  public: boolean
   updated_at: Date
 }
 
-export function loadNote(id: number): Promise<NoteRow | null> {
+export function loadNote(id: string): Promise<NoteRow | null> {
   return getPrisma().note.findFirst({
     where: { id, is_deleted: false },
     select: {
@@ -20,6 +21,7 @@ export function loadNote(id: number): Promise<NoteRow | null> {
       title: true,
       folder: true,
       content: true,
+      public: true,
       updated_at: true
     }
   })

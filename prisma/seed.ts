@@ -239,7 +239,7 @@ async function main() {
   await db.note.deleteMany({ where: { user_id: USER_ID } })
 
   console.log(`[seed] creating ${notes.length} notes`)
-  const noteByTitle = new Map<string, number>()
+  const noteByTitle = new Map<string, string>()
   for (const n of notes) {
     const row = await db.note.create({
       data: {

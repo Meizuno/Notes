@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type FlatNote = { id: number, title: string, folder: string | null }
+type FlatNote = { id: string, title: string, folder: string | null }
 
 const props = defineProps<{
   saving?: boolean
@@ -14,6 +14,7 @@ const emit = defineEmits<{
 const title = defineModel<string>('title', { default: '' })
 const folder = defineModel<string>('folder', { default: '' })
 const content = defineModel<string>('content', { default: '' })
+const isPublic = defineModel<boolean>('public', { default: false })
 
 const mode = ref<'edit' | 'preview'>('edit')
 const editorRef = useTemplateRef<any>('editor')
@@ -81,12 +82,21 @@ function onSubmit() {
       </p>
     </div>
 
-    <!-- Mode toggle + actions -->
-    <div class="flex items-center shrink-0">
+    <!-- Mode toggle + public toggle + actions -->
+    <div class="flex items-center gap-3 shrink-0">
       <div class="flex gap-1 rounded-lg bg-muted p-1">
         <UButton size="xs" :variant="mode === 'edit' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-pencil" label="Edit" @click="mode = 'edit'" />
         <UButton size="xs" :variant="mode === 'preview' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-eye" label="Preview" @click="mode = 'preview'" />
       </div>
+      <!-- Public toggle: off = note is private to the workspace (the
+           default), on = anyone with the URL can read it. Wiring the
+           anonymous-view route is a follow-up; the column itself
+           lives on the model now. -->
+      <label class="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
+        <USwitch v-model="isPublic" size="xs" />
+        <UIcon :name="isPublic ? 'i-lucide-globe' : 'i-lucide-lock'" class="size-3.5" />
+        {{ isPublic ? 'Public' : 'Private' }}
+      </label>
       <div class="flex-1" />
       <div class="flex gap-2">
         <UButton

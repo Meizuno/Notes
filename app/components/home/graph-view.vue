@@ -25,7 +25,7 @@ import {
 // to canvas if/when you cross that.
 
 type Node = SimulationNodeDatum & {
-  id: number | string
+  id: string
   title: string
   type: 'note' | 'folder'
   folder: string | null
@@ -33,8 +33,8 @@ type Node = SimulationNodeDatum & {
 }
 
 type Edge = SimulationLinkDatum<Node> & {
-  source: number | string | Node
-  target: number | string | Node
+  source: string | Node
+  target: string | Node
 }
 
 const nodes = shallowRef<Node[]>([])
@@ -44,13 +44,13 @@ const width = ref(0)
 const height = ref(0)
 const transform = reactive({ x: 0, y: 0, k: 1 })
 
-const hoveredId = ref<number | string | null>(null)
+const hoveredId = ref<string | null>(null)
 
 // Compute neighbours of the hovered node (including itself) so we can
 // dim everything else. Includes both incoming and outgoing edges.
-const neighbours = computed<Set<number | string> | null>(() => {
+const neighbours = computed<Set<string> | null>(() => {
   if (hoveredId.value == null) return null
-  const set = new Set<number | string>([hoveredId.value])
+  const set = new Set<string>([hoveredId.value])
   for (const e of edges.value) {
     const s = typeof e.source === 'object' ? (e.source as Node).id : e.source
     const t = typeof e.target === 'object' ? (e.target as Node).id : e.target
@@ -60,7 +60,7 @@ const neighbours = computed<Set<number | string> | null>(() => {
   return set
 })
 
-const isFaded = (id: number | string) => neighbours.value !== null && !neighbours.value.has(id)
+const isFaded = (id: string) => neighbours.value !== null && !neighbours.value.has(id)
 
 const isEdgeFaded = (e: Edge) => {
   if (neighbours.value === null) return false
@@ -251,7 +251,7 @@ function onPanEnd(e: PointerEvent) {
   ;(e.currentTarget as Element).releasePointerCapture?.(e.pointerId)
 }
 
-const dragState = ref<{ id: number | string, moved: boolean } | null>(null)
+const dragState = ref<{ id: string, moved: boolean } | null>(null)
 
 function toGraphCoords(e: PointerEvent) {
   const rect = containerRef.value!.getBoundingClientRect()

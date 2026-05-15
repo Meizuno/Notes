@@ -9,10 +9,10 @@
 // `.client.vue` → never SSRs, never blocks page transition. Page
 // mounts to a skeleton; metadata and chunks fill in over the wire.
 
-type Meta = { id: number, title: string, folder: string | null, updated_at: string }
+type Meta = { id: string, title: string, folder: string | null, updated_at: string }
 type ChunkAst = Awaited<ReturnType<typeof parseMarkdown>>['body']
 
-const props = defineProps<{ id: number }>()
+const props = defineProps<{ id: string }>()
 
 const meta = ref<Meta | null>(null)
 const chunks = ref<ChunkAst[]>([])

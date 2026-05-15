@@ -1,10 +1,12 @@
 export default defineEventHandler(async (event) => {
   await requireAuthUser(event)
-  const id = Number(getRouterParam(event, 'id'))
-  const { title, content, folder } = await readBody<{
+  const id = getRouterParam(event, 'id') ?? ''
+  if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
+  const { title, content, folder, public: isPublic } = await readBody<{
     title?: string
     content?: string
     folder?: string | null
+    public?: boolean
   }>(event)
 
   const db = getPrisma()
@@ -19,7 +21,8 @@ export default defineEventHandler(async (event) => {
     data: {
       ...(title !== undefined ? { title: title.trim() } : {}),
       ...(content !== undefined ? { content } : {}),
-      ...(folder !== undefined ? { folder: folder?.trim() || null } : {})
+      ...(folder !== undefined ? { folder: folder?.trim() || null } : {}),
+      ...(isPublic !== undefined ? { public: isPublic } : {})
     }
   })
 })

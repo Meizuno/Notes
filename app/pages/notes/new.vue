@@ -8,18 +8,20 @@ const route = useRoute()
 const title = ref(String(route.query.title ?? ''))
 const folder = ref(String(route.query.folder ?? ''))
 const content = ref('')
+const isPublic = ref(false)
 const saving = ref(false)
 
 async function save() {
   if (!title.value.trim() || saving.value) return
   saving.value = true
   try {
-    const note = await $fetch<{ id: number }>('/api/notes', {
+    const note = await $fetch<{ id: string }>('/api/notes', {
       method: 'POST',
       body: {
         title: title.value,
         folder: folder.value.trim() || null,
-        content: content.value
+        content: content.value,
+        public: isPublic.value
       }
     })
     await navigateTo(`/notes/${note.id}`)
@@ -34,6 +36,7 @@ async function save() {
       v-model:title="title"
       v-model:folder="folder"
       v-model:content="content"
+      v-model:public="isPublic"
       :saving="saving"
       submit-label="Save note"
       @submit="save"

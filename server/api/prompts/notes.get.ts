@@ -22,13 +22,13 @@
 
 type GraphNodeType = 'note' | 'folder'
 type GraphNode = {
-  id: number | string
+  id: string
   title: string
   type: GraphNodeType
   folder: string | null
   links: number
 }
-type GraphEdge = { source: number | string, target: number | string }
+type GraphEdge = { source: string, target: string }
 
 const folderId = (path: string) => `folder:${path}`
 const ancestorPaths = (folder: string): string[] => {
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   const db = getPrisma()
 
   const query = getQuery(event)
-  const noteId = query.id ? parseInt(query.id as string) : null
+  const noteId = query.id ? String(query.id) : null
   const folder = query.folder ? String(query.folder).trim() : ''
   const search = query.search ? String(query.search).trim() : ''
   const limit = Math.min(Number(query.limit) || 10, 100)
@@ -123,7 +123,7 @@ export default defineEventHandler(async (event) => {
       if (parent === null) continue
       edges.push({ source: folderId(path), target: folderId(parent) })
     }
-    const degree = new Map<number | string, number>()
+    const degree = new Map<string, number>()
     for (const e of edges) {
       degree.set(e.source, (degree.get(e.source) ?? 0) + 1)
       degree.set(e.target, (degree.get(e.target) ?? 0) + 1)

@@ -17,11 +17,18 @@ datasource db {
 // implicit — never stored as rows; the sidebar tree is derived from
 // the unique prefixes across all non-deleted notes.
 model Note {
-  id         Int      @id @default(autoincrement())
+  // UUID PK — generated client-side by Prisma so the id is known
+  // before the row hits the DB (useful for optimistic creates +
+  // sharable URLs that aren't enumerable like autoincrement ints).
+  id         String   @id @default(uuid()) @db.Uuid
   user_id    String
   title      String   @db.VarChar(300)
   folder     String?  @db.VarChar(500)
   content    String   @default("") @db.Text
+  // Public flag: a future "view this note without logging in" flow
+  // will read this. Default is false (private) so the addition is
+  // backwards-compatible — every existing note stays internal.
+  public     Boolean  @default(false)
   is_deleted Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -32,6 +39,7 @@ model Note {
   @@index([user_id])
   @@index([is_deleted])
   @@index([folder])
+  @@index([public])
   @@index([title(ops: raw("gin_trgm_ops"))],   type: Gin)
   @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("notes")
@@ -43,9 +51,9 @@ model Note {
 // graph, and they resolve automatically once a note with that title
 // is created.
 model NoteLink {
-  from_id  Int
+  from_id  String  @db.Uuid
   to_title String  @db.VarChar(300)
-  to_id    Int?
+  to_id    String? @db.Uuid
 
   from     Note  @relation("from", fields: [from_id], references: [id], onDelete: Cascade)
   to       Note? @relation("to",   fields: [to_id],   references: [id], onDelete: SetNull)
