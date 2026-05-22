@@ -180,27 +180,24 @@ html, body {
   opacity: 0;
 }
 .prose .kb-fold-block > * {
+  /* min-height: 0   lets the inner block shrink inside the grid track,
+                     which is what makes the height transition work.
+     min-width: 0    lets a wide chunk (e.g. a <table>) shrink to the
+                     track width instead of stretching to max-content
+                     and bypassing its wrapper's own overflow-x-auto.
+     overflow-y: hidden clips margin/border bleed during the height
+                     transition but leaves overflow-x untouched so
+                     <pre> and <table> keep their horizontal scroll.
+     transition       on margin/padding/border-width animates the
+                     "zero them out when folded" rule below. */
   min-height: 0;
-  /* `min-width: 0` lets the grid item shrink to the track width
-     instead of stretching to its max-content. Without it, a wide
-     <table> inside a chunk would balloon the grid item past the
-     column and bypass the table wrapper's own overflow-x-auto. */
   min-width: 0;
-  /* `overflow-y: hidden` only — the *wrapper* already clips content
-     during the height transition; clobbering both axes here would
-     also disable the `<pre>`'s own `overflow-x-auto`, leaving long
-     code lines truncated with no scrollbar. */
   overflow-y: hidden;
-}
-/* When the wrapper is folded the inner element's prose box still
-   carries margin (handled below) *and* padding/border on elements
-   that style themselves rather than relying on a wrapper —
-   notably `<pre>` (`p-3 + border`) and `<hr>` (`border-top`).
-   Zero all three so the inner box truly renders at 0 height; the
-   wrapper's `overflow: hidden` then clips any rounding artifacts. */
-.prose .kb-fold-block > * {
   transition: margin 220ms ease, padding 220ms ease, border-width 220ms ease;
 }
+/* When folded, zero the inner block's vertical margin/padding/border
+   so it truly renders at 0 height — notably for `<pre>` (`p-3 + border`)
+   and `<hr>` (`border-top`) which paint their own box. */
 .prose .kb-fold-block.is-folded > * {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
@@ -226,32 +223,15 @@ html, body {
   border-bottom-width: 0 !important;
 }
 
-/* ───── Block palette ─────────────────────────────────────────────
-   Each markdown block type gets its own accent so a long note reads
-   like a layered document rather than a wall of text. Backgrounds
-   use solid hues at low alpha (so they tint cleanly in both light
-   and dark mode); borders, markers, and inline pills go full
-   saturation. The hue assignment is intentional, not random:
-     headings descend through the spectrum (indigo → violet → cyan →
-       teal → emerald → amber) so depth reads at a glance
-     blockquote = amber  (a "highlight" tone, like a sticky note)
-     inline code = rose  (so it pops against running text)
-     code block = slate  (kept calm so syntax highlighting wins)
-     hr = indigo→violet gradient (mirrors the favicon)
-     table head = indigo tint (calls out the header row)
-     ul markers = indigo (primary), ol markers = violet (secondary)
-     links = indigo → violet on hover
-   ─────────────────────────────────────────────────────────────── */
+/* ───── Markdown block palette ─────────────────────────────────────
+   Each block type gets a Nord accent so long notes read as a layered
+   document. Per-block comments below explain the specific hue
+   choice; the rule of thumb is "same hue in both modes, only the
+   lightness shifts to match the surface". */
 
-/* Headings follow Obsidian Nord's hue order — Aurora red → yellow →
-   green → purple, then Frost light → mid. Each mode picks the shade
-   of that hue that actually reads against its background:
-     - light: darker variants (deep aurora / nord-10) so they stand
-       out on a near-white Snow Storm surface
-     - dark:  the canonical Nord 11–15 / nord-8/9 you've been using
-       on Polar Night.
-   The hue itself is the same in both modes — same red is red — only
-   the lightness shifts. */
+/* Headings — Aurora red → yellow → green → purple, then Frost light
+   → mid. Light mode uses darker variants of each hue so they read
+   against Snow Storm; dark mode uses the canonical Nord shades. */
 
 /* light */
 .prose h1 { color: #9A4047; }              /* nord-11 darkened ~22% */
@@ -398,10 +378,10 @@ html, body {
 .dark .prose a       { color: var(--nord-8); }
 .dark .prose a:hover { color: var(--nord-7); }
 
-/* Table-cell utilities used inside auto-imported Prose* components.
-   The v4 scanner occasionally misses classes in those files during
-   the production build (they work in dev), so listing them here
-   guarantees they make it into the bundle either way. */
-@source inline("whitespace-nowrap md:whitespace-normal overflow-x-auto align-top border-t border-b-2 border-default/60 bg-elevated tracking-wide uppercase text-muted");
+/* Safety net for auto-imported Prose* components — Tailwind v4's
+   scanner occasionally drops classes from these files in production
+   builds (they work in dev), so listing them here guarantees they
+   land in the bundle. Add new ones here when you spot the gap. */
+@source inline("whitespace-nowrap md:whitespace-normal md:w-full overflow-x-auto align-top border-t border-b-2 border-default/60 bg-elevated tracking-wide uppercase text-muted");
 
 @source inline("bg-cyan-500 bg-cyan-500/10 bg-cyan-500/20 text-cyan-600 text-cyan-400 bg-violet-500 bg-violet-500/10 bg-violet-500/20 text-violet-600 text-violet-400 bg-amber-500 bg-amber-500/10 bg-amber-500/20 text-amber-600 text-amber-400 bg-emerald-500 bg-emerald-500/10 bg-emerald-500/20 text-emerald-600 text-emerald-400 bg-rose-500 bg-rose-500/10 bg-rose-500/20 text-rose-600 text-rose-400 bg-sky-500 bg-sky-500/10 bg-sky-500/20 text-sky-600 text-sky-400 bg-indigo-500 bg-indigo-500/10 bg-indigo-500/20 text-indigo-600 text-indigo-400 bg-pink-500 bg-pink-500/10 bg-pink-500/20 text-pink-600 text-pink-400 bg-orange-500 bg-orange-500/10 bg-orange-500/20 text-orange-600 text-orange-400 bg-teal-500 bg-teal-500/10 bg-teal-500/20 text-teal-600 text-teal-400 bg-lime-500 bg-lime-500/10 bg-lime-500/20 text-lime-600 text-lime-400 bg-red-500 bg-red-500/10 bg-red-500/20 text-red-600 text-red-400 bg-green-500 bg-green-500/10 bg-green-500/20 text-green-600 text-green-400 bg-blue-500 bg-blue-500/10 bg-blue-500/20 text-blue-600 text-blue-400 bg-purple-500 bg-purple-500/10 bg-purple-500/20 text-purple-600 text-purple-400 bg-yellow-500 bg-yellow-500/10 bg-yellow-500/20 text-yellow-600 text-yellow-400");
