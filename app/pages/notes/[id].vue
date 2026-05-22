@@ -69,7 +69,7 @@ async function deleteNote() {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4" :class="editing ? 'pt-4 pb-2 h-full overflow-hidden' : 'py-4'">
+  <div class="max-w-3xl mx-auto px-4" :class="editing ? 'pt-4 pb-2 h-full overflow-hidden' : 'pb-4'">
     <!-- Edit mode -->
     <template v-if="editing">
       <NoteForm

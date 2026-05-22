@@ -181,6 +181,11 @@ html, body {
 }
 .prose .kb-fold-block > * {
   min-height: 0;
+  /* `min-width: 0` lets the grid item shrink to the track width
+     instead of stretching to its max-content. Without it, a wide
+     <table> inside a chunk would balloon the grid item past the
+     column and bypass the table wrapper's own overflow-x-auto. */
+  min-width: 0;
   /* `overflow-y: hidden` only — the *wrapper* already clips content
      during the height transition; clobbering both axes here would
      also disable the `<pre>`'s own `overflow-x-auto`, leaving long

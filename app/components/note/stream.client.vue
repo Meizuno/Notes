@@ -432,10 +432,14 @@ const formattedDate = computed(() =>
   <div v-if="notFound" class="text-sm text-muted">Note not found.</div>
   <div v-else>
     <!-- Title row: title on the left, parent-supplied action buttons
-         on the right. Skeleton until the first NDJSON line lands; the
-         actions slot is rendered immediately so Edit/Delete remain
-         interactive even before metadata arrives. -->
-    <div class="flex items-start justify-between gap-3 mb-4">
+         on the right. Sticky to the top of the scroll container so
+         the heading stays visible on long notes. `-mx-4 px-4` extends
+         the background to the page-column edges; `bg-default` matches
+         the body so content disappears cleanly behind. Skeleton until
+         the first NDJSON line lands; the actions slot is rendered
+         immediately so Edit/Delete remain interactive even before
+         metadata arrives. -->
+    <div class="sticky top-0 z-10 bg-default -mx-4 px-4 py-3 mb-4 flex items-start justify-between gap-3 border-b border-default/60">
       <h1 v-if="meta" class="text-2xl font-bold leading-tight min-w-0 flex-1">{{ meta.title }}</h1>
       <USkeleton v-else-if="!error" class="h-8 w-2/3 rounded" />
       <span v-else class="flex-1" />

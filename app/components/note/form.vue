@@ -82,8 +82,10 @@ function onSubmit() {
       </p>
     </div>
 
-    <!-- Mode toggle + public toggle + actions -->
-    <div class="flex items-center gap-3 shrink-0">
+    <!-- Mode toggle + public toggle + actions. flex-wrap lets the
+         action group drop to a second line when the viewport can't
+         fit all items on one row (mobile / narrow split panes). -->
+    <div class="flex items-center flex-wrap gap-x-3 gap-y-2 shrink-0">
       <div class="flex gap-1 rounded-lg bg-muted p-1">
         <UButton size="xs" :variant="mode === 'edit' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-pencil" label="Edit" @click="mode = 'edit'" />
         <UButton size="xs" :variant="mode === 'preview' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-eye" label="Preview" @click="mode = 'preview'" />
