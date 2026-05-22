@@ -212,24 +212,30 @@ function toggleHeadingByIndex(targetIdx: number) {
 // arrived content respects already-collapsed sections.
 // Tags treated as top-level "blocks" for fold logic. A heading
 // boundary folds everything that follows up to the next heading at
-// the same/higher level.
-const BLOCK_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR'])
+// the same/higher level. Markdown tables render as a <div> grid
+// (no <table> element); they're matched by class in the selector
+// below and identified in the container check by class as well.
+const BLOCK_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'HR'])
 // Container tags whose descendants should be treated as part of an
 // already-collected outer block (not as their own blocks). E.g., a
 // <p> inside an <li> belongs to the <ul>, not to the document flow.
 const CONTAINER_TAGS = new Set([...BLOCK_TAGS, 'LI', 'TR', 'TD', 'TH', 'THEAD', 'TBODY', 'TFOOT'])
 
+function isContainer(el: HTMLElement): boolean {
+  return CONTAINER_TAGS.has(el.tagName) || el.classList.contains('prose-grid-table')
+}
+
 function collectBlocks(): HTMLElement[] {
   if (!proseRef.value) return []
   const all = Array.from(proseRef.value.querySelectorAll<HTMLElement>(
-    'h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote, pre, table, hr'
+    'h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote, pre, .prose-grid-table, hr'
   ))
   return all.filter((el) => {
     // Reject elements nested inside another block / list item — they
     // shouldn't be standalone fold targets, the outer block is.
     let p = el.parentElement
     while (p && p !== proseRef.value) {
-      if (CONTAINER_TAGS.has(p.tagName)) return false
+      if (isContainer(p)) return false
       p = p.parentElement
     }
     return true

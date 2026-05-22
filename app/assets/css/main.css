@@ -291,11 +291,11 @@ html, body {
    attention; cells already feel busy with borders + multiple values
    per row. Drop to a neutral surface so the code reads as "this is
    verbatim" without screaming. */
-.prose :where(table) :where(code):not(pre code) {
+.prose .prose-grid-table :where(code):not(pre code) {
   background: var(--ui-bg-muted);
   color: var(--ui-text);
 }
-.dark .prose :where(table) :where(code):not(pre code) {
+.dark .prose .prose-grid-table :where(code):not(pre code) {
   background: var(--ui-bg-elevated);
   color: var(--ui-text);
 }
@@ -348,20 +348,12 @@ html, body {
     rgba(180, 142, 173, 0) 100%);
 }
 
-/* Tables — frost-tinted header, gentle zebra below. */
-.prose thead { background: rgba(94, 129, 172, 0.14); }   /* nord-10 / 14% — slightly punchier on light */
-.prose th {
-  color: var(--nord-10);
-  font-weight: 600;
-}
-.prose tbody tr:nth-child(even) {
-  background: rgba(76, 86, 106, 0.06);     /* nord-3 / 6% — subtle on snow storm */
-}
-.dark .prose thead { background: rgba(94, 129, 172, 0.12); }
+/* Tables — frost-tinted header text. The header background tint and
+   row zebra live in ProseTable.vue because the grid layout collapses
+   thead/tr via `display: contents` (no box → no background), so they
+   have to paint on the cell elements directly. */
+.prose th { color: var(--nord-10); font-weight: 600; }
 .dark .prose th { color: var(--nord-8); }
-.dark .prose tbody tr:nth-child(even) {
-  background: rgba(76, 86, 106, 0.08);
-}
 
 /* Links — deep frost on light (nord-8 looked washed against the
    Snow Storm bg); light frost on dark. Distinct from H1 in either
