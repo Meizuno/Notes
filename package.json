@@ -9,7 +9,8 @@
     "postinstall": "nuxt prepare && prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:rebuild-links": "tsx prisma/rebuild-links.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
