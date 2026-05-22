@@ -1,13 +1,19 @@
+const VISIBILITY_VALUES = new Set(['PRIVATE', 'PROTECTED', 'PUBLIC'] as const)
+type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
+
 export default defineEventHandler(async (event) => {
   await requireAuthUser(event)
   const id = getRouterParam(event, 'id') ?? ''
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
-  const { title, content, folder, public: isPublic } = await readBody<{
+  const { title, content, folder, visibility } = await readBody<{
     title?: string
     content?: string
     folder?: string | null
-    public?: boolean
+    visibility?: Visibility
   }>(event)
+  if (visibility !== undefined && !VISIBILITY_VALUES.has(visibility)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid visibility' })
+  }
 
   const db = getPrisma()
 
@@ -22,7 +28,7 @@ export default defineEventHandler(async (event) => {
       ...(title !== undefined ? { title: title.trim() } : {}),
       ...(content !== undefined ? { content } : {}),
       ...(folder !== undefined ? { folder: folder?.trim() || null } : {}),
-      ...(isPublic !== undefined ? { public: isPublic } : {})
+      ...(visibility !== undefined ? { visibility } : {})
     }
   })
 })

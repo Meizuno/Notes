@@ -25,10 +25,15 @@ model Note {
   title      String   @db.VarChar(300)
   folder     String?  @db.VarChar(500)
   content    String   @default("") @db.Text
-  // Public flag: a future "view this note without logging in" flow
-  // will read this. Default is false (private) so the addition is
-  // backwards-compatible — every existing note stays internal.
-  public     Boolean  @default(false)
+  // Visibility tier. Standard web-auth model:
+  //   PUBLIC    — anyone can read (incl. anonymous visitors)
+  //   PROTECTED — any authenticated user can read (default — the
+  //               shared-workspace baseline)
+  //   PRIVATE   — only the creator (matched against `user_id`) can
+  //               read
+  // Write access (PUT/POST/DELETE) always requires auth; this enum
+  // gates *read* access only.
+  visibility NoteVisibility @default(PROTECTED)
   is_deleted Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -39,7 +44,7 @@ model Note {
   @@index([user_id])
   @@index([is_deleted])
   @@index([folder])
-  @@index([public])
+  @@index([visibility])
   @@index([title(ops: raw("gin_trgm_ops"))],   type: Gin)
   @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("notes")
@@ -50,6 +55,18 @@ model Note {
 // doesn't exist yet — Obsidian draws those as dimmed nodes in the
 // graph, and they resolve automatically once a note with that title
 // is created.
+// Visibility tier for Note (see `Note.visibility`). Stored as a
+// Postgres enum (`@@map`ed to `note_visibility`) so adding new tiers
+// later only requires an ALTER TYPE migration rather than a string
+// column rewrite.
+enum NoteVisibility {
+  PRIVATE
+  PROTECTED
+  PUBLIC
+
+  @@map("note_visibility")
+}
+
 model NoteLink {
   from_id  String  @db.Uuid
   to_title String  @db.VarChar(300)

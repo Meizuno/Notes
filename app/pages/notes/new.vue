@@ -1,4 +1,6 @@
 <script setup lang="ts">
+type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
+
 const route = useRoute()
 
 // Pre-fill from query params:
@@ -8,7 +10,7 @@ const route = useRoute()
 const title = ref(String(route.query.title ?? ''))
 const folder = ref(String(route.query.folder ?? ''))
 const content = ref('')
-const isPublic = ref(false)
+const visibility = ref<Visibility>('PROTECTED')
 const saving = ref(false)
 
 async function save() {
@@ -21,7 +23,7 @@ async function save() {
         title: title.value,
         folder: folder.value.trim() || null,
         content: content.value,
-        public: isPublic.value
+        visibility: visibility.value
       }
     })
     await navigateTo(`/notes/${note.id}`)
@@ -36,7 +38,7 @@ async function save() {
       v-model:title="title"
       v-model:folder="folder"
       v-model:content="content"
-      v-model:public="isPublic"
+      v-model:visibility="visibility"
       :saving="saving"
       submit-label="Save note"
       @submit="save"

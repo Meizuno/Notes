@@ -1,5 +1,6 @@
 <script setup lang="ts">
 type FlatNote = { id: string, title: string, folder: string | null }
+type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
 
 const props = defineProps<{
   saving?: boolean
@@ -14,7 +15,23 @@ const emit = defineEmits<{
 const title = defineModel<string>('title', { default: '' })
 const folder = defineModel<string>('folder', { default: '' })
 const content = defineModel<string>('content', { default: '' })
-const isPublic = defineModel<boolean>('public', { default: false })
+const visibility = defineModel<Visibility>('visibility', { default: 'PROTECTED' })
+
+// Single source of truth for the visibility dropdown's icon + label
+// per tier; both the trigger button and the menu items pull from it.
+const VISIBILITY_META: Record<Visibility, { label: string, icon: string, description: string }> = {
+  PRIVATE:   { label: 'Private',   icon: 'i-lucide-lock',   description: 'Only you can read' },
+  PROTECTED: { label: 'Protected', icon: 'i-lucide-users',  description: 'Any signed-in user can read' },
+  PUBLIC:    { label: 'Public',    icon: 'i-lucide-globe',  description: 'Anyone with the link can read' }
+}
+const visibilityMenu = computed(() =>
+  (['PRIVATE', 'PROTECTED', 'PUBLIC'] as const).map(v => ({
+    label: VISIBILITY_META[v].label,
+    icon: VISIBILITY_META[v].icon,
+    description: VISIBILITY_META[v].description,
+    onSelect: () => { visibility.value = v }
+  }))
+)
 
 const mode = ref<'edit' | 'preview'>('edit')
 const editorRef = useTemplateRef<any>('editor')
@@ -82,7 +99,7 @@ function onSubmit() {
       </p>
     </div>
 
-    <!-- Mode toggle + public toggle + actions. flex-wrap lets the
+    <!-- Mode toggle + visibility menu + actions. flex-wrap lets the
          action group drop to a second line when the viewport can't
          fit all items on one row (mobile / narrow split panes). -->
     <div class="flex items-center flex-wrap gap-x-3 gap-y-2 shrink-0">
@@ -90,15 +107,21 @@ function onSubmit() {
         <UButton size="xs" :variant="mode === 'edit' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-pencil" label="Edit" @click="mode = 'edit'" />
         <UButton size="xs" :variant="mode === 'preview' ? 'solid' : 'ghost'" color="primary" icon="i-lucide-eye" label="Preview" @click="mode = 'preview'" />
       </div>
-      <!-- Public toggle: off = note is private to the workspace (the
-           default), on = anyone with the URL can read it. Wiring the
-           anonymous-view route is a follow-up; the column itself
-           lives on the model now. -->
-      <label class="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
-        <USwitch v-model="isPublic" size="xs" />
-        <UIcon :name="isPublic ? 'i-lucide-globe' : 'i-lucide-lock'" class="size-3.5" />
-        {{ isPublic ? 'Public' : 'Private' }}
-      </label>
+      <!-- Visibility tier (PRIVATE / PROTECTED / PUBLIC). Dropdown
+           shows the active tier's icon + label; clicking opens the
+           three-option menu. Compact enough to share the row with the
+           edit/preview toggle and the action buttons on a narrow
+           viewport (the wrap rules above handle overflow). -->
+      <UDropdownMenu :items="visibilityMenu" :ui="{ content: 'w-56' }">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="xs"
+          :icon="VISIBILITY_META[visibility].icon"
+          :label="VISIBILITY_META[visibility].label"
+          trailing-icon="i-lucide-chevron-down"
+        />
+      </UDropdownMenu>
       <div class="flex-1" />
       <div class="flex gap-2">
         <UButton

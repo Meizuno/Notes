@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { getPrisma } from '../../../utils/db'
 import { noteVisibilityWhere } from '../../../utils/notes'
 
@@ -22,7 +23,7 @@ import { noteVisibilityWhere } from '../../../utils/notes'
 
 const WIKI_RE = /\[\[([^\]]+)\]\]/g
 
-async function expandWikiLinks(content: string, authed: boolean, visibilityWhere: { is_deleted: false, public?: true }) {
+async function expandWikiLinks(content: string, authed: boolean, visibilityWhere: Prisma.NoteWhereInput) {
   const titles = new Set<string>()
   for (const m of content.matchAll(WIKI_RE)) {
     const t = m[1]?.trim()

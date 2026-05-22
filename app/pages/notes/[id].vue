@@ -1,5 +1,6 @@
 <script setup lang="ts">
-type Note = { id: string, title: string, folder: string | null, content: string, public: boolean, updated_at: string }
+type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
+type Note = { id: string, title: string, folder: string | null, content: string, visibility: Visibility, updated_at: string }
 
 const route = useRoute()
 const id = String(route.params.id)
@@ -17,7 +18,7 @@ const editing = ref(false)
 const editTitle = ref('')
 const editFolder = ref('')
 const editContent = ref('')
-const editPublic = ref(false)
+const editVisibility = ref<Visibility>('PROTECTED')
 const saving = ref(false)
 const loadingEdit = ref(false)
 
@@ -29,7 +30,7 @@ async function startEdit() {
     editTitle.value = note.title
     editFolder.value = note.folder ?? ''
     editContent.value = note.content
-    editPublic.value = note.public
+    editVisibility.value = note.visibility
     editing.value = true
   }
   finally { loadingEdit.value = false }
@@ -45,7 +46,7 @@ async function saveEdit() {
         title: editTitle.value,
         folder: editFolder.value.trim() || null,
         content: editContent.value,
-        public: editPublic.value
+        visibility: editVisibility.value
       }
     })
     version.value++  // remount the stream so it shows the new content
@@ -76,7 +77,7 @@ async function deleteNote() {
         v-model:title="editTitle"
         v-model:folder="editFolder"
         v-model:content="editContent"
-        v-model:public="editPublic"
+        v-model:visibility="editVisibility"
         :saving="saving"
         submit-label="Save"
         @submit="saveEdit"
