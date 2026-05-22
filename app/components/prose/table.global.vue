@@ -1,9 +1,12 @@
 <template>
   <div class="my-2 overflow-x-auto rounded-lg border border-default">
-    <!-- min-w-full + w-max lets the table grow past the container so
-         the wrapper's overflow-x-auto actually triggers when columns
-         can't fit; on narrow content it still spans the full width. -->
-    <table class="min-w-full w-max text-sm">
+    <!-- `w-full` fills the container; tables have a special sizing
+         rule where unwrappable content (long words, explicit nowrap)
+         still pushes the table wider than 100%, which trips the
+         wrapper's overflow-x-auto. So we get a flush-to-edges table
+         on narrow content AND horizontal scroll when columns can't
+         compress further. -->
+    <table class="w-full text-sm">
       <slot />
     </table>
   </div>

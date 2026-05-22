@@ -307,6 +307,19 @@ html, body {
   color: rgb(212 132 141);
 }
 
+/* Inside tables the aurora-red pill competes with the data for
+   attention; cells already feel busy with borders + multiple values
+   per row. Drop to a neutral surface so the code reads as "this is
+   verbatim" without screaming. */
+.prose :where(table) :where(code):not(pre code) {
+  background: var(--ui-bg-muted);
+  color: var(--ui-text);
+}
+.dark .prose :where(table) :where(code):not(pre code) {
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text);
+}
+
 /* Code block surface — each mode gets a slightly-elevated Nord tier
    relative to the main bg, so the block reads as a contained
    "panel" without changing the page's overall lightness:
