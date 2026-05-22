@@ -17,18 +17,13 @@ import { getPrisma } from '../utils/db'
 //
 // Wire format:
 //   {
-//     nodes: [{ id, title, type: 'note', folder, links }, ...],
+//     nodes: [{ id, title, folder, links }, ...],
 //     edges: [{ source, target }, ...]
 //   }
-// `type` is retained as `'note'` only so the existing graph-view
-// component (which still understands a `'folder'` branch from the
-// previous folder-tree topology) keeps type-checking. New code can
-// ignore it.
 
 type GraphNode = {
   id: string
   title: string
-  type: 'note'
   folder: string | null
   links: number
 }
