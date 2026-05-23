@@ -6,6 +6,36 @@ const route = useRoute()
 const id = String(route.params.id)
 const { loggedIn } = useAuth()
 
+// SSR-fetch the note so Google sees real title/description in the
+// head. The body still streams via <NoteStream> for the progressive
+// rendering UX; this extra fetch is meta-only and discarded after
+// `useSeoMeta` consumes it. 404 (private / not visible / missing)
+// falls through to NoteStream's own not-found state.
+const config = useRuntimeConfig()
+const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
+const { data: noteMeta } = await useFetch<Note>(`/api/notes/${id}`, {
+  key: `note-meta-${id}`
+})
+
+if (noteMeta.value) {
+  const isPublic = noteMeta.value.visibility === 'PUBLIC'
+  const canonical = siteUrl ? `${siteUrl}/notes/${id}` : undefined
+  useSeoMeta({
+    title: noteMeta.value.title,
+    description: noteMeta.value.description ?? undefined,
+    ogTitle: noteMeta.value.title,
+    ogDescription: noteMeta.value.description ?? undefined,
+    ogType: 'article',
+    ogUrl: canonical,
+    // PROTECTED / PRIVATE notes get noindex so they stay out of
+    // Google even if a bot somehow reaches the URL.
+    robots: isPublic ? 'index, follow' : 'noindex, nofollow'
+  })
+  if (canonical) {
+    useHead({ link: [{ rel: 'canonical', href: canonical }] })
+  }
+}
+
 // `version` is bumped on every successful edit and used as the `:key`
 // on `<NoteStream>` so the component remounts and re-fetches the
 // stream after a save.

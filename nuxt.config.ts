@@ -59,7 +59,14 @@ export default defineNuxtConfig({
     // /api/prompts/* endpoints on behalf of a user. Empty in dev
     // disables API-key auth; the prompt endpoints fall back to the
     // user session in that case.
-    mcpApiKey: ''
+    mcpApiKey: '',
+    public: {
+      // Canonical site URL (no trailing slash). Used by the sitemap
+      // and `<link rel="canonical">` tags to emit absolute URLs.
+      // Set via NUXT_PUBLIC_SITE_URL in prod; in dev we fall back to
+      // deriving from the incoming request.
+      siteUrl: ''
+    }
   },
 
   nitro: {

@@ -8,7 +8,20 @@
 // reloads, plays well with browser back/forward. Defaults to graph
 // when the param is missing or invalid.
 
-useSeoMeta({ title: 'Notes' })
+const config = useRuntimeConfig()
+const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
+useSeoMeta({
+  title: 'Notes',
+  description: 'A self-hosted notes vault — browse a force-directed graph or a folder tree of every public note.',
+  ogTitle: 'Notes',
+  ogDescription: 'A self-hosted notes vault.',
+  ogType: 'website',
+  ogUrl: siteUrl || undefined,
+  robots: 'index, follow'
+})
+if (siteUrl) {
+  useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/` }] })
+}
 
 type View = 'graph' | 'tree'
 
