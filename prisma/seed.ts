@@ -11,11 +11,12 @@ import { PrismaClient } from '@prisma/client'
 const db = new PrismaClient()
 const USER_ID = 'seed-user'
 
-type Seed = { title: string, folder?: string, content: string }
+type Seed = { title: string, folder?: string, description?: string, content: string }
 
 const notes: Seed[] = [
   {
     title: 'Index',
+    description: 'Landing page with links to the main hubs in the vault.',
     content: `# Index
 
 Landing page for the vault. Hubs:
@@ -27,6 +28,7 @@ Landing page for the vault. Hubs:
   },
   {
     title: 'Notes App',
+    description: 'Meta notes about this app — goals, architecture, current status.',
     content: `# Notes App
 
 This app. A self-hosted vault built on Nuxt + Vue + Prisma.
@@ -43,6 +45,7 @@ This app. A self-hosted vault built on Nuxt + Vue + Prisma.
   {
     title: 'Programming',
     folder: 'Programming',
+    description: 'Hub linking to every technical note in the vault — languages, frameworks, tooling.',
     content: `# Programming
 
 Hub for technical notes.
@@ -62,6 +65,7 @@ Hub for technical notes.
   {
     title: 'TypeScript',
     folder: 'Programming/Languages',
+    description: 'Statically-typed superset of JavaScript. Patterns I reach for and open questions about type design.',
     content: `# TypeScript
 
 Statically-typed superset of JavaScript. Pairs especially well with Vue 3 — the \`<script setup lang="ts">\` flow gives full inference for props, refs, and \`defineModel\`.
@@ -77,6 +81,7 @@ Statically-typed superset of JavaScript. Pairs especially well with Vue 3 — th
   {
     title: 'JavaScript',
     folder: 'Programming/Languages',
+    description: 'Language quirks and idioms worth keeping in muscle memory.',
     content: `# JavaScript
 
 The runtime under TypeScript. Notes on language quirks worth keeping in muscle memory:
@@ -90,6 +95,7 @@ See also Markdown for fenced code rendering quirks.`
   {
     title: 'Vue',
     folder: 'Programming/Frameworks',
+    description: 'Reactive UI framework notes — Composition API, defineModel, TypeScript integration.',
     content: `# Vue
 
 Reactive UI framework. Notes here are mostly about Composition API + \`<script setup>\`.
@@ -103,6 +109,7 @@ Related: Notes App is built on Vue + Nuxt.`
   {
     title: 'Nuxt',
     folder: 'Programming/Frameworks',
+    description: 'Full-stack Vue framework — SSR, file-based routing, Nitro server, auto-imports.',
     content: `# Nuxt
 
 Full-stack Vue framework. SSR, file-based routing, Nitro server, auto-imports.
@@ -119,6 +126,7 @@ Full-stack Vue framework. SSR, file-based routing, Nitro server, auto-imports.
   {
     title: 'Markdown',
     folder: 'Programming/Tools',
+    description: 'Plain-text formatting used for every note in this vault. CommonMark + GFM conventions.',
     content: `# Markdown
 
 Plain-text formatting language. Used as the canonical content format in this vault.
@@ -130,6 +138,7 @@ Plain-text formatting language. Used as the canonical content format in this vau
   {
     title: 'Prisma',
     folder: 'Programming/Tools',
+    description: 'TypeScript-first ORM for PostgreSQL. Schema-first workflow and migration cadence.',
     content: `# Prisma
 
 TypeScript-first ORM for PostgreSQL (and others). Notes:
@@ -143,6 +152,7 @@ Used by Notes App for the Note table.`
   {
     title: 'Books to Read',
     folder: 'Reading',
+    description: 'Current reading queue with one-line notes on why each book is interesting.',
     content: `# Books to Read
 
 Currently queued:
@@ -156,6 +166,7 @@ Add more from Daily Notes when I jot something down.`
   {
     title: 'Designing Data-Intensive Applications',
     folder: 'Reading/Books',
+    description: 'Kleppmann\'s backend engineering primer — replication, partitioning, transactions, consensus, batch vs stream.',
     content: `# Designing Data-Intensive Applications
 
 By Martin Kleppmann. The book everyone recommends for backend engineers.
@@ -170,6 +181,7 @@ Cross-links to Programming when reading the chapters on distributed databases �
   {
     title: 'The Pragmatic Programmer',
     folder: 'Reading/Books',
+    description: '20th anniversary edition. Themes that still hold up: DRY, tracer bullets, plain text.',
     content: `# The Pragmatic Programmer
 
 Andy Hunt + Dave Thomas. The 20th anniversary edition holds up.
@@ -184,6 +196,7 @@ See also: Productivity notes.`
   {
     title: 'Daily Notes',
     folder: 'Productivity',
+    description: 'Free-form journaling. One note per day, top section is the day\'s shipping list.',
     content: `# Daily Notes
 
 Free-form journaling. Each entry tagged with a date and linked from here.
@@ -199,6 +212,7 @@ This note is the index — individual day-notes link back here.`
   {
     title: 'Productivity',
     folder: 'Productivity',
+    description: 'Techniques that actually stick — time-boxing, paper triage, hard task first.',
     content: `# Productivity
 
 Loose collection of techniques that actually stick.
@@ -212,6 +226,7 @@ Inspirations from The Pragmatic Programmer and (eventually) Atomic Habits.`
   {
     title: 'Ideas',
     folder: 'Productivity',
+    description: 'Raw idea park — promote each item to a proper note once it grows legs.',
     content: `# Ideas
 
 Park ideas here, promote to a proper note when they grow legs.
@@ -233,6 +248,7 @@ async function main() {
         user_id: USER_ID,
         title: n.title,
         folder: n.folder ?? null,
+        description: n.description ?? null,
         content: n.content
       }
     })
