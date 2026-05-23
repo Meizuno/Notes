@@ -1,6 +1,6 @@
 <script setup lang="ts">
 type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
-type Note = { id: string, title: string, folder: string | null, content: string, visibility: Visibility, updated_at: string }
+type Note = { id: string, title: string, folder: string | null, description: string | null, content: string, visibility: Visibility, updated_at: string }
 
 const route = useRoute()
 const id = String(route.params.id)
@@ -17,6 +17,7 @@ const version = ref(0)
 const editing = ref(false)
 const editTitle = ref('')
 const editFolder = ref('')
+const editDescription = ref('')
 const editContent = ref('')
 const editVisibility = ref<Visibility>('PROTECTED')
 const saving = ref(false)
@@ -29,6 +30,7 @@ async function startEdit() {
     const note = await $fetch<Note>(`/api/notes/${id}`)
     editTitle.value = note.title
     editFolder.value = note.folder ?? ''
+    editDescription.value = note.description ?? ''
     editContent.value = note.content
     editVisibility.value = note.visibility
     editing.value = true
@@ -45,6 +47,7 @@ async function saveEdit() {
       body: {
         title: editTitle.value,
         folder: editFolder.value.trim() || null,
+        description: editDescription.value.trim() || null,
         content: editContent.value,
         visibility: editVisibility.value
       }
@@ -76,6 +79,7 @@ async function deleteNote() {
       <NoteForm
         v-model:title="editTitle"
         v-model:folder="editFolder"
+        v-model:description="editDescription"
         v-model:content="editContent"
         v-model:visibility="editVisibility"
         :saving="saving"

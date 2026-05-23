@@ -108,7 +108,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
   server.registerTool(
     'get_note',
     {
-      description: 'Get full note by id. Returns title, content (CommonMark + GFM markdown), folder path, visibility tier, and timestamps. Returns an error if the id is not found or refers to a PRIVATE note owned by another user.',
+      description: 'Get full note by id. Returns title, description, content (CommonMark + GFM markdown), folder path, visibility tier, and timestamps. Returns an error if the id is not found or refers to a PRIVATE note owned by another user.',
       inputSchema: z.object({
         id: z.string().describe('(required) Note UUID.')
       })
@@ -119,6 +119,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
         select: {
           id: true,
           title: true,
+          description: true,
           content: true,
           folder: true,
           visibility: true,
@@ -134,15 +135,16 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
   server.registerTool(
     'create_note',
     {
-      description: 'Create a new note. `title` is required. `content` is CommonMark + GFM markdown. `folder` is a slash-separated path that nests folders implicitly (e.g. "Programming/Rust"); omit for a root-level note. `visibility` defaults to PROTECTED. Returns the new note\'s id and metadata.',
+      description: 'Create a new note. `title` is required. `content` is CommonMark + GFM markdown. `description` is an optional one- or two-sentence summary (max 500 chars). `folder` is a slash-separated path that nests folders implicitly (e.g. "Programming/Rust"); omit for a root-level note. `visibility` defaults to PROTECTED. Returns the new note\'s id and metadata.',
       inputSchema: z.object({
         title: z.string().min(1).describe('(required) Note title.'),
         content: z.string().optional().describe('Markdown body. Omit for an empty note.'),
+        description: z.string().max(500).optional().describe('Short summary surfaced in list / search contexts.'),
         folder: z.string().optional().describe('Folder path, slash-separated (e.g. "Programming/Rust"). Omit for root.'),
         visibility: visibilitySchema.optional()
       })
     },
-    async ({ title, content, folder, visibility }) => {
+    async ({ title, content, description, folder, visibility }) => {
       const trimmedTitle = title.trim()
       if (!trimmedTitle) return toJson({ error: 'Title is required' })
 
@@ -151,12 +153,14 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
           user_id: userId,
           title: trimmedTitle,
           content: content ?? '',
+          description: description?.trim() || null,
           folder: folder?.trim() || null,
           visibility: visibility ?? NoteVisibility.PROTECTED
         },
         select: {
           id: true,
           title: true,
+          description: true,
           folder: true,
           visibility: true,
           created_at: true,
@@ -170,16 +174,17 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
   server.registerTool(
     'update_note',
     {
-      description: 'Update a note by id. Any provided field is set; omitted fields are left unchanged. Pass `folder: null` to move a note to the root. Returns the updated note. Errors if the id is not found, soft-deleted, or refers to a PRIVATE note owned by another user.',
+      description: 'Update a note by id. Any provided field is set; omitted fields are left unchanged. Pass `folder: null` or `description: null` to clear those fields. Returns the updated note. Errors if the id is not found, soft-deleted, or refers to a PRIVATE note owned by another user.',
       inputSchema: z.object({
         id: z.string().describe('(required) Note UUID.'),
         title: z.string().min(1).optional().describe('New title.'),
         content: z.string().optional().describe('New markdown body (replaces existing content).'),
+        description: z.string().max(500).nullable().optional().describe('New summary, or null to clear.'),
         folder: z.string().nullable().optional().describe('New folder path, or null to move to root.'),
         visibility: visibilitySchema.optional()
       })
     },
-    async ({ id, title, content, folder, visibility }) => {
+    async ({ id, title, content, description, folder, visibility }) => {
       // Scope check up front so a hit on someone else's PRIVATE note
       // returns the same "not found" shape as a missing id, instead
       // of leaking existence via a different error.
@@ -195,11 +200,13 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
           ...(title !== undefined ? { title: title.trim() } : {}),
           ...(content !== undefined ? { content } : {}),
           ...(folder !== undefined ? { folder: folder?.trim() || null } : {}),
+          ...(description !== undefined ? { description: description?.trim() || null } : {}),
           ...(visibility !== undefined ? { visibility } : {})
         },
         select: {
           id: true,
           title: true,
+          description: true,
           folder: true,
           visibility: true,
           updated_at: true

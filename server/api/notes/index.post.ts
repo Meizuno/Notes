@@ -3,10 +3,11 @@ type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuthUser(event)
-  const { title, content, folder, visibility } = await readBody<{
+  const { title, content, folder, description, visibility } = await readBody<{
     title: string
     content?: string
     folder?: string | null
+    description?: string | null
     visibility?: Visibility
   }>(event)
   if (!title?.trim()) throw createError({ statusCode: 400, statusMessage: 'Title is required' })
@@ -21,6 +22,7 @@ export default defineEventHandler(async (event) => {
       title: title.trim(),
       content: content ?? '',
       folder: folder?.trim() || null,
+      description: description?.trim() || null,
       visibility: visibility ?? 'PROTECTED'
     }
   })

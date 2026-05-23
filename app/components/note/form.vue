@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const title = defineModel<string>('title', { default: '' })
 const folder = defineModel<string>('folder', { default: '' })
+const description = defineModel<string>('description', { default: '' })
 const content = defineModel<string>('content', { default: '' })
 const visibility = defineModel<Visibility>('visibility', { default: 'PROTECTED' })
 
@@ -98,6 +99,18 @@ function onSubmit() {
         Type any path — slashes nest (e.g. <span class="font-mono">Programming/Languages</span>). Existing folders autocomplete. Leave empty for root.
       </p>
     </div>
+
+    <!-- Optional short summary. Two-row textarea so a sentence or two
+         fits without scrolling; max 500 chars enforced server-side. -->
+    <UTextarea
+      v-model="description"
+      placeholder="Optional description — a sentence or two for list / search previews"
+      size="sm"
+      :rows="2"
+      maxlength="500"
+      autoresize
+      class="shrink-0 w-full"
+    />
 
     <!-- Mode toggle + visibility menu + actions. flex-wrap lets the
          action group drop to a second line when the viewport can't

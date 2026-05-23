@@ -8,6 +8,7 @@ const route = useRoute()
 //   ?folder=A/B — "new note in this folder" entry points.
 const title = ref(String(route.query.title ?? ''))
 const folder = ref(String(route.query.folder ?? ''))
+const description = ref('')
 const content = ref('')
 const visibility = ref<Visibility>('PROTECTED')
 const saving = ref(false)
@@ -21,6 +22,7 @@ async function save() {
       body: {
         title: title.value,
         folder: folder.value.trim() || null,
+        description: description.value.trim() || null,
         content: content.value,
         visibility: visibility.value
       }
@@ -36,6 +38,7 @@ async function save() {
     <NoteForm
       v-model:title="title"
       v-model:folder="folder"
+      v-model:description="description"
       v-model:content="content"
       v-model:visibility="visibility"
       :saving="saving"

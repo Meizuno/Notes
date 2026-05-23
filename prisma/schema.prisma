@@ -22,9 +22,14 @@ model Note {
   // sharable URLs that aren't enumerable like autoincrement ints).
   id         String   @id @default(uuid()) @db.Uuid
   user_id    String
-  title      String   @db.VarChar(300)
-  folder     String?  @db.VarChar(500)
-  content    String   @default("") @db.Text
+  title       String  @db.VarChar(300)
+  folder      String? @db.VarChar(500)
+  // Optional one- or two-sentence summary surfaced in list / search
+  // contexts. Stored on the note row itself rather than derived from
+  // the first paragraph of content so the author keeps explicit
+  // control over what gets shown.
+  description String? @db.VarChar(500)
+  content     String  @default("") @db.Text
   // Visibility tier. Standard web-auth model:
   //   PUBLIC    — anyone can read (incl. anonymous visitors)
   //   PROTECTED — any authenticated user can read (default — the

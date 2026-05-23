@@ -11,6 +11,7 @@ export type NoteRow = {
   id: string
   title: string
   folder: string | null
+  description: string | null
   content: string
   visibility: NoteVisibility
   updated_at: Date
@@ -44,6 +45,7 @@ export function loadNote(event: H3Event, id: string): Promise<NoteRow | null> {
       id: true,
       title: true,
       folder: true,
+      description: true,
       content: true,
       visibility: true,
       updated_at: true
