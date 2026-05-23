@@ -4,8 +4,7 @@ type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
 const route = useRoute()
 
 // Pre-fill from query params:
-//   ?title=Foo  — clicking a dangling [[Foo]] wiki-link lands here
-//                 with the title primed.
+//   ?title=Foo  — entry point for "create note with this title".
 //   ?folder=A/B — "new note in this folder" entry points.
 const title = ref(String(route.query.title ?? ''))
 const folder = ref(String(route.query.folder ?? ''))

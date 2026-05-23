@@ -1,4 +1,3 @@
-import type { Prisma } from '@prisma/client'
 import { getPrisma } from '../../../utils/db'
 import { noteVisibilityWhere } from '../../../utils/notes'
 
@@ -10,43 +9,10 @@ import { noteVisibilityWhere } from '../../../utils/notes'
 // `<MDCRenderer>` block, which avoids the re-parse cost of repeatedly
 // rendering an ever-growing buffer.
 //
-// Wiki-links: `[[Title]]` in the source markdown is expanded to a
-// real markdown link before chunking. Resolved targets become
-// `[Title](/notes/<id>)`; unresolved (no note with that title) become
-// `[Title](/notes/new?title=Title)` — Obsidian-style: clicking a
-// dangling link sends you to the create page with the title primed.
-//
 // Wire format:
 //   {"meta":{"title":"...","folder":"...","updated_at":"..."}}\n
 //   {"text":"# Title\n"}\n
 //   {"text":"...next paragraph..."}\n
-
-const WIKI_RE = /\[\[([^\]]+)\]\]/g
-
-async function expandWikiLinks(content: string, authed: boolean, visibilityWhere: Prisma.NoteWhereInput) {
-  const titles = new Set<string>()
-  for (const m of content.matchAll(WIKI_RE)) {
-    const t = m[1]?.trim()
-    if (t) titles.add(t)
-  }
-  if (!titles.size) return content
-
-  // Anon users only resolve to public targets — private notes stay
-  // invisible. Dangling targets render as plain text for anon (no
-  // create link, since they can't create anyway).
-  const targets = await getPrisma().note.findMany({
-    where: { title: { in: [...titles] }, ...visibilityWhere },
-    select: { id: true, title: true }
-  })
-  const titleToId = new Map(targets.map(t => [t.title, t.id]))
-
-  return content.replace(WIKI_RE, (_, raw) => {
-    const t = String(raw).trim()
-    const id = titleToId.get(t)
-    if (id) return `[${t}](/notes/${id})`
-    return authed ? `[${t}](/notes/new?title=${encodeURIComponent(t)})` : t
-  })
-}
 
 function splitMarkdown(content: string): string[] {
   const lines = content.split('\n')
@@ -72,11 +38,8 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id') ?? ''
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
 
-  const visibilityWhere = noteVisibilityWhere(event)
-  const authed = Boolean(event.context.user)
-
   const note = await getPrisma().note.findFirst({
-    where: { id, ...visibilityWhere },
+    where: { id, ...noteVisibilityWhere(event) },
     select: {
       id: true,
       title: true,
@@ -97,8 +60,7 @@ export default defineEventHandler(async (event) => {
     folder: note.folder,
     updated_at: note.updated_at
   }
-  const expanded = await expandWikiLinks(note.content, authed, visibilityWhere)
-  const chunks = splitMarkdown(expanded)
+  const chunks = splitMarkdown(note.content)
   const enc = new TextEncoder()
 
   return new ReadableStream({

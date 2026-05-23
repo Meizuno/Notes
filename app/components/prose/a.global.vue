@@ -1,26 +1,18 @@
 <script setup lang="ts">
-// Internal links (resolved or dangling wiki-links rendered by the
-// stream endpoint) use NuxtLink for SPA navigation. External URLs
-// open in a new tab.
-//
-// "Dangling" links go to /notes/new?title=… — we detect that pattern
-// and apply muted/italic styling so unresolved references look
-// different from real cross-links, à la Obsidian.
+// All anchors from MDC's prose output route through here. Internal
+// links (any href starting with `/`) use NuxtLink for SPA navigation;
+// external URLs open in a new tab with the standard rel attrs.
 
 const props = defineProps<{ href?: string }>()
 
 const isInternal = computed(() => Boolean(props.href?.startsWith('/')))
-const isDangling = computed(() => Boolean(props.href?.startsWith('/notes/new?')))
 </script>
 
 <template>
   <NuxtLink
     v-if="isInternal"
     :to="href"
-    class="underline underline-offset-2"
-    :class="isDangling
-      ? 'text-muted/70 italic decoration-dashed hover:text-muted'
-      : 'text-primary hover:text-primary/80'"
+    class="text-primary hover:text-primary/80 underline underline-offset-2"
   >
     <slot />
   </NuxtLink>

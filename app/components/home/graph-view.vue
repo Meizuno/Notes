@@ -11,12 +11,13 @@ import {
   type SimulationLinkDatum
 } from 'd3-force'
 
-// Force-directed graph view of the entire vault, à la Obsidian. Nodes
-// are notes; edges are wiki-links from `NoteLink`. Dragging a node
-// pins it under the cursor and the rest of the simulation responds.
-// Hovering highlights the node + its direct neighbours and dims
-// everything else. Wheel zooms around the cursor; dragging empty
-// space pans.
+// Force-directed graph view of the entire vault. Each note node
+// connects to its leaf-folder pseudo-node; folder pseudo-nodes
+// connect to their parents, so notes cluster around their folder
+// ancestors. Dragging a node pins it under the cursor and the rest
+// of the simulation responds. Hovering highlights the node + its
+// direct neighbours and dims everything else. Wheel zooms around the
+// cursor; dragging empty space pans.
 //
 // Rendering strategy: SVG with a single transformed `<g>` for the
 // pan/zoom layer. Vue iterates `nodes`/`edges` directly; d3-force

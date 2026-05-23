@@ -108,7 +108,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
   server.registerTool(
     'get_note',
     {
-      description: 'Get full note by id. Returns title, content (markdown — may contain wiki-links like [[Other Note]]), folder path, visibility tier, and timestamps. Returns an error if the id is not found or refers to a PRIVATE note owned by another user.',
+      description: 'Get full note by id. Returns title, content (CommonMark + GFM markdown), folder path, visibility tier, and timestamps. Returns an error if the id is not found or refers to a PRIVATE note owned by another user.',
       inputSchema: z.object({
         id: z.string().describe('(required) Note UUID.')
       })
@@ -134,7 +134,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
   server.registerTool(
     'create_note',
     {
-      description: 'Create a new note. `title` is required. `content` is markdown and may include wiki-links like `[[Other Note]]` (resolved by title at read time). `folder` is a slash-separated path that nests folders implicitly (e.g. "Programming/Rust"); omit for a root-level note. `visibility` defaults to PROTECTED. Returns the new note\'s id and metadata.',
+      description: 'Create a new note. `title` is required. `content` is CommonMark + GFM markdown. `folder` is a slash-separated path that nests folders implicitly (e.g. "Programming/Rust"); omit for a root-level note. `visibility` defaults to PROTECTED. Returns the new note\'s id and metadata.',
       inputSchema: z.object({
         title: z.string().min(1).describe('(required) Note title.'),
         content: z.string().optional().describe('Markdown body. Omit for an empty note.'),

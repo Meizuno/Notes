@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Home page = the vault overview. Two presentations of the same data:
-//   - Graph: force-directed network of notes + wiki-link edges
+//   - Graph: force-directed view of notes clustered around their
+//            folder anchors
 //   - Tree:  hierarchical folder layout, full-page version of the
 //            sidebar tree
 // Persisted as `?view=graph|tree` in the URL — shareable, survives

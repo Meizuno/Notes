@@ -118,10 +118,10 @@ function enableCheckboxes(node: { tag?: string, props?: Record<string, unknown>,
 }
 
 // Fetch the raw note source once on mount / id-change and cache it
-// in `sourceContent`. The streaming endpoint expands `[[wiki-links]]`
-// before chunking, so we can't reconstruct the source from chunks —
-// we need the original to compute fold state and to PUT modifications
-// back without losing wiki-links.
+// in `sourceContent`. The fold state and checkbox-toggle write-back
+// paths both need the original markdown — the stream chunks the
+// content for progressive rendering, so we can't reliably stitch it
+// back together from what the renderer sees.
 async function fetchSource() {
   try {
     const note = await $fetch<{ content: string }>(`/api/notes/${props.id}`)
