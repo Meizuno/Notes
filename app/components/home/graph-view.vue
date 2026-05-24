@@ -73,10 +73,20 @@ const isEdgeFaded = (e: Edge) => {
 function radius(n: Node) {
   // Folder pseudo-nodes scale with how many children point at them
   // (more children → bigger ring) so the hierarchy is readable at
-  // a glance. Notes get a constant small disc, with a tiny degree
-  // bonus when they happen to be referenced.
-  if (n.type === 'folder') return 6 + Math.sqrt(n.links) * 2
-  return 4 + Math.sqrt(n.links) * 1.2
+  // a glance. Notes get a slightly larger constant disc than folders'
+  // base, with a degree bonus when they happen to be referenced.
+  if (n.type === 'folder') return 9 + Math.sqrt(n.links) * 2.2
+  return 7 + Math.sqrt(n.links) * 1.4
+}
+
+// Truncate long titles so labels don't overlap with neighbours.
+// We cap the displayed string (not the font size) at MAX_LABEL chars
+// — the full title stays in `n.title` and the hover/select code paths
+// can still match against it.
+const MAX_LABEL = 20
+function displayTitle(title: string): string {
+  if (title.length <= MAX_LABEL) return title
+  return title.slice(0, MAX_LABEL - 1).trimEnd() + '…'
 }
 
 // Colour notes by their top-level folder so each "tree" gets a
@@ -230,26 +240,81 @@ function onWheel(e: WheelEvent) {
   transform.k = newK
 }
 
-let panning = false
+// Pointer state for pan + pinch. We track every pointer that lands
+// on empty graph space (node pointers go through their own handlers
+// and are excluded here). One active pointer → pan; two → pinch.
+const activePointers = new Map<number, { x: number, y: number }>()
 let panStart = { x: 0, y: 0, tx: 0, ty: 0 }
+let lastPinchDistance = 0
+
+function setPanAnchor(x: number, y: number) {
+  panStart = { x, y, tx: transform.x, ty: transform.y }
+}
 
 function onPanStart(e: PointerEvent) {
   if ((e.target as Element).closest('[data-node]')) return
   userInteracted.value = true
-  panning = true
-  panStart = { x: e.clientX, y: e.clientY, tx: transform.x, ty: transform.y }
   ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+  if (activePointers.size === 1) {
+    setPanAnchor(e.clientX, e.clientY)
+  }
+  else if (activePointers.size === 2) {
+    // Two-finger gesture begins; seed the pinch baseline distance.
+    const pts = [...activePointers.values()]
+    const p1 = pts[0]!
+    const p2 = pts[1]!
+    lastPinchDistance = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+  }
 }
 
 function onPanMove(e: PointerEvent) {
-  if (!panning) return
-  transform.x = panStart.tx + (e.clientX - panStart.x)
-  transform.y = panStart.ty + (e.clientY - panStart.y)
+  if (!activePointers.has(e.pointerId)) return
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+  if (activePointers.size === 1) {
+    // One finger / mouse → pan.
+    transform.x = panStart.tx + (e.clientX - panStart.x)
+    transform.y = panStart.ty + (e.clientY - panStart.y)
+  }
+  else if (activePointers.size === 2) {
+    // Two fingers → pinch-zoom anchored at the midpoint, same
+    // around-cursor math the wheel handler uses.
+    const pts = [...activePointers.values()]
+    const p1 = pts[0]!
+    const p2 = pts[1]!
+    const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+    if (lastPinchDistance > 0 && dist > 0) {
+      const factor = dist / lastPinchDistance
+      const newK = Math.min(8, Math.max(0.2, transform.k * factor))
+      const rect = containerRef.value!.getBoundingClientRect()
+      const cx = (p1.x + p2.x) / 2 - rect.left
+      const cy = (p1.y + p2.y) / 2 - rect.top
+      transform.x = cx - (cx - transform.x) * (newK / transform.k)
+      transform.y = cy - (cy - transform.y) * (newK / transform.k)
+      transform.k = newK
+    }
+    lastPinchDistance = dist
+  }
 }
 
 function onPanEnd(e: PointerEvent) {
-  panning = false
+  if (!activePointers.has(e.pointerId)) return
   ;(e.currentTarget as Element).releasePointerCapture?.(e.pointerId)
+  activePointers.delete(e.pointerId)
+
+  if (activePointers.size === 1) {
+    // Lifted one finger of a pinch — reset pan anchor so the
+    // remaining finger continues from where it currently is, not
+    // from where it started the pinch.
+    const p = [...activePointers.values()][0]!
+    setPanAnchor(p.x, p.y)
+    lastPinchDistance = 0
+  }
+  else if (activePointers.size === 0) {
+    lastPinchDistance = 0
+  }
 }
 
 const dragState = ref<{ id: string, moved: boolean } | null>(null)
@@ -355,6 +420,17 @@ onBeforeUnmount(() => {
           @pointerup="onNodePointerUp(n, $event)"
           @pointercancel="onNodePointerUp(n, $event)"
         >
+          <!-- Transparent hit target larger than the visible disc, so
+               taps on phones don't need pixel-perfect aim. Visible
+               radius stays the same for desktop where mice are
+               precise enough. -->
+          <circle
+            :cx="n.x ?? 0"
+            :cy="n.y ?? 0"
+            :r="Math.max(radius(n), 14)"
+            fill="transparent"
+            class="node-hit"
+          />
           <!-- Folder nodes get a stroke ring + lower fill opacity so
                they read as "structural" rather than "navigable." -->
           <circle
@@ -367,6 +443,7 @@ onBeforeUnmount(() => {
             :stroke-width="n.type === 'folder' ? 2 : 0"
             class="node"
             :class="{ 'node-folder': n.type === 'folder' }"
+            pointer-events="none"
           />
           <text
             :x="n.x ?? 0"
@@ -375,7 +452,7 @@ onBeforeUnmount(() => {
             class="label"
             :class="{ 'label-folder': n.type === 'folder' }"
             :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px` }"
-          >{{ n.title }}</text>
+          >{{ displayTitle(n.title) }}</text>
         </g>
       </g>
     </svg>
