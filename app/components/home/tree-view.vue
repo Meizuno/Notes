@@ -3,12 +3,16 @@
 // Folders start collapsed (UTree's default). Expand state persists
 // across SPA navigation via a useState key and resets on full reload.
 
-type FlatNote = { id: string, title: string, folder: string | null }
+type FlatNote = { id: string, title: string, folder: string | null, created_at: string }
 
 type TreeItem = {
   label: string
   value: string
   icon?: string
+  // Drives the within-folder sort. Folders carry the max createdAt
+  // of any descendant note so folder ordering follows "newest first"
+  // too; notes carry their own row's created_at.
+  createdAt?: string
   children?: TreeItem[]
   onSelect?: (e: Event) => void
 }
@@ -72,6 +76,12 @@ const items = computed<TreeItem[]>(() => {
         }
         parent.children!.push(folder)
       }
+      // Bubble each note's createdAt up to every ancestor folder so
+      // a folder's effective createdAt is the OLDEST note inside —
+      // matches the "ascending = oldest first" sort the user sees.
+      if (!folder.createdAt || n.created_at < folder.createdAt) {
+        folder.createdAt = n.created_at
+      }
       parent = folder
     }
     // Per-item onSelect: clicks on note rows navigate. Folders have no
@@ -83,15 +93,20 @@ const items = computed<TreeItem[]>(() => {
       label: n.title,
       value: noteId,
       icon: 'i-lucide-file-text',
+      createdAt: n.created_at,
       onSelect: () => router.push(`/notes/${noteId}`)
     })
   }
+  // Sort children: folders first (so structure reads at a glance),
+  // then within each kind by createdAt asc — oldest content first.
+  // Fallback to label for items missing createdAt (defensive).
   const sortRecursive = (node: TreeItem) => {
     if (!node.children) return
     node.children.sort((a, b) => {
       const aFolder = !!a.children
       const bFolder = !!b.children
       if (aFolder !== bFolder) return aFolder ? -1 : 1
+      if (a.createdAt && b.createdAt) return a.createdAt.localeCompare(b.createdAt)
       return a.label.localeCompare(b.label)
     })
     node.children.forEach(sortRecursive)
