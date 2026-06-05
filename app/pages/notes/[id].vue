@@ -72,7 +72,7 @@ async function saveEdit() {
   if (!editTitle.value.trim() || saving.value) return
   saving.value = true
   try {
-    await $fetch(`/api/notes/${id}`, {
+    await $fetch(`/api/notes/${id}` as string, {
       method: 'PUT',
       body: {
         title: editTitle.value,
@@ -97,7 +97,7 @@ async function deleteNote() {
     confirmLabel: 'Delete'
   })
   if (!ok) return
-  await $fetch(`/api/notes/${id}`, { method: 'DELETE' })
+  await $fetch(`/api/notes/${id}` as string, { method: 'DELETE' })
   await navigateTo('/')
 }
 </script>

@@ -143,7 +143,7 @@ function persistContent() {
   const prev = savePending ?? Promise.resolve()
   const snapshot = sourceContent.value
   savePending = prev.catch(() => {}).then(() =>
-    $fetch(`/api/notes/${props.id}`, {
+    $fetch(`/api/notes/${props.id}` as string, {
       method: 'PUT',
       body: { content: snapshot }
     }).then(() => undefined)
