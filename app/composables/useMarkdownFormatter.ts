@@ -58,7 +58,7 @@ function repairListMarkers(input: string): string {
   let i = 0
   while (i < lines.length) {
     let j = i
-    while (j < lines.length && isListLooking(lines[j])) j++
+    while (j < lines.length && isListLooking(lines[j]!)) j++
     if (j - i >= 2) {
       // Promote a preceding "Title:" line to `## Title`. Skip back
       // through blank lines to find the last non-empty entry.
@@ -69,11 +69,11 @@ function repairListMarkers(input: string): string {
         const trimmed = prev.trim()
         out[prevIdx] = `## ${trimmed.slice(0, -1).trim()}`
       }
-      for (let k = i; k < j; k++) out.push(fixListLine(lines[k]))
+      for (let k = i; k < j; k++) out.push(fixListLine(lines[k]!))
       i = j
     }
     else {
-      out.push(lines[i])
+      out.push(lines[i]!)
       i++
     }
   }

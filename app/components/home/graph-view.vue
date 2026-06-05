@@ -53,8 +53,8 @@ const neighbours = computed<Set<string> | null>(() => {
   if (hoveredId.value == null) return null
   const set = new Set<string>([hoveredId.value])
   for (const e of edges.value) {
-    const s = typeof e.source === 'object' ? (e.source as Node).id : e.source
-    const t = typeof e.target === 'object' ? (e.target as Node).id : e.target
+    const s = typeof e.source === 'object' ? (e.source as Node).id : String(e.source)
+    const t = typeof e.target === 'object' ? (e.target as Node).id : String(e.target)
     if (s === hoveredId.value) set.add(t)
     if (t === hoveredId.value) set.add(s)
   }
@@ -65,8 +65,8 @@ const isFaded = (id: string) => neighbours.value !== null && !neighbours.value.h
 
 const isEdgeFaded = (e: Edge) => {
   if (neighbours.value === null) return false
-  const s = typeof e.source === 'object' ? (e.source as Node).id : e.source
-  const t = typeof e.target === 'object' ? (e.target as Node).id : e.target
+  const s = typeof e.source === 'object' ? (e.source as Node).id : String(e.source)
+  const t = typeof e.target === 'object' ? (e.target as Node).id : String(e.target)
   return !(neighbours.value.has(s) && neighbours.value.has(t))
 }
 

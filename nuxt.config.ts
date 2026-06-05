@@ -18,7 +18,7 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@nuxt/ui', '@nuxtjs/mdc'],
+  modules: ['@nuxt/ui', '@nuxtjs/mdc', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
 
   // Shiki preloads + theme for code blocks. Both build-time content

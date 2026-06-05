@@ -35,7 +35,7 @@ const visibilityMenu = computed(() =>
 )
 
 const mode = ref<'edit' | 'preview'>('edit')
-const editorRef = useTemplateRef<any>('editor')
+const editorRef = useTemplateRef<{ textareaRef?: HTMLTextAreaElement | null, $el?: HTMLElement | null }>('editor')
 const { displayContent } = useImagePaste(content, editorRef)
 
 const { format, formatting } = useMarkdownFormatter()

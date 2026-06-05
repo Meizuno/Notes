@@ -42,7 +42,7 @@ const view = computed<View>({
 const items = [
   { label: 'Graph', value: 'graph', icon: 'i-lucide-network' },
   { label: 'Tree', value: 'tree', icon: 'i-lucide-folder-tree' }
-] as const
+]
 
 // Prefetch the note tree alongside the graph so toggling to the
 // Tree view is instant. The tree component reuses this payload via

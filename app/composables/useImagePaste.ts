@@ -1,14 +1,21 @@
 const PLACEHOLDER_RE = /!\[image]\(base64:#(\d+)\)/g
 const FULL_RE = /!\[image]\(data:image\/[^)]+\)/g
 
-function getTextareaEl(ref: Ref<any>): HTMLTextAreaElement | null {
+// Minimal structural shape of the UTextarea component instance we
+// reach into — enough to find the native <textarea> element.
+interface TextareaHost {
+  textareaRef?: HTMLTextAreaElement | null
+  $el?: HTMLElement | null
+}
+
+function getTextareaEl(ref: Readonly<Ref<TextareaHost | null>>): HTMLTextAreaElement | null {
   const comp = ref.value
   if (!comp) return null
   // UTextarea exposes the native element via textareaRef or $el
   return comp.textareaRef ?? comp.$el?.querySelector('textarea') ?? null
 }
 
-export function useImagePaste(content: Ref<string>, textareaRef: Ref<any>) {
+export function useImagePaste(content: Ref<string>, textareaRef: Readonly<Ref<TextareaHost | null>>) {
   const images = ref<Map<number, string>>(new Map())
   let nextId = 0
 
