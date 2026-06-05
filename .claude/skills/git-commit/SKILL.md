@@ -195,13 +195,22 @@ All three must pass. If any fails, **do not commit** — fix the failure first. 
 
 > Note: per CLAUDE.md these scripts are a migration TARGET — some may not exist yet. Run the ones that do; if a script is missing, say so rather than silently skipping verification.
 
-### Step 7 — Compose the message and commit
+### Step 7 — Confirm the commit, then commit
 
-`/git-commit` invocation IS the human's acceptance — don't ask them to confirm the message before committing. Compose it per Steps 2-5, run `git commit` with a heredoc, surface the SHA after (Step 9). This holds regardless of diff size, breaking-change marker (`!`), or `revert:` type — the human gated the commit at the skill invocation; the message wording is the AI's responsibility.
+**Never commit automatically.** The gate is the **commit action**, not the
+message wording — the message is the AI's responsibility (compose it per
+Steps 2-5; don't ask the human to approve or edit the text). Display the
+composed message so the human sees what's about to happen, then ask a
+simple go/no-go for the **commit itself** — e.g. "Proceed with the
+commit?" — and only run `git commit` once the human says yes.
 
-If the human wants to preview wording first, they can ask for a draft **without invoking the skill** — e.g. "draft a commit message for this", "what would you write?". `/git-commit` itself is always direct.
+Don't turn this into a wording review. If the human volunteers a change to
+the message, apply it; otherwise just confirm the action and commit.
 
-Use a heredoc to pass multiline messages safely:
+When there are multiple logical commits, confirm before running them (lay
+out the planned split and get one go-ahead for the set, or confirm each).
+
+Once confirmed, use a heredoc to pass multiline messages safely:
 
 ```sh
 git commit -m "$(cat <<'EOF'
@@ -321,6 +330,7 @@ ci: pin pnpm to 9.12.0
 
 ## Hard rules
 
+- ❌ **Never run `git commit` without confirming the commit action first** — show the composed message for visibility, but the go/no-go is about committing, not approving the wording
 - ❌ **Never use `--no-verify`** to skip pre-commit hooks unless human explicitly asks
 - ❌ **Never use `--no-gpg-sign`** unless human explicitly asks
 - ❌ **Never `--amend` a commit that was already pushed** — create a new commit
