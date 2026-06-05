@@ -13,7 +13,7 @@ export const useAuth = () => {
     try {
       await $fetch('/api/auth/logout', { method: 'POST' })
     }
-    catch {}
+    catch { /* best-effort: ignore logout failures, clear locally anyway */ }
     user.value = null
   }
 

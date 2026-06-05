@@ -1,4 +1,4 @@
-import { sendRedirect, getHeader } from 'h3'
+import { sendRedirect } from 'h3'
 
 const SKIP_PATHS = [
   "/api/auth/google",
