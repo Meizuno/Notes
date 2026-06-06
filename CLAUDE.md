@@ -60,9 +60,9 @@ app/                      ── CLIENT (Vue/Nuxt)
 server/                   ── SERVER (Nitro)
 ├── api/                  ── thin HTTP handlers (parse → validate → service → return)
 ├── services/             ── SERVER use-cases: business logic (TARGET — see below)
-├── utils/                ── auto-imported helpers (db client, auth, data access)
+├── utils/                ── auto-imported helpers (db client, auth, data access, error taxonomy)
 ├── middleware/           ── auth gate, request logging
-├── plugins/              ── startup hooks (env validation, error mapping)
+├── plugins/              ── startup hooks (env validation)
 └── routes/              ── non-API routes (robots.txt, sitemap.xml)
 
 shared/                   ── CROSS-CUTTING types + zod schemas (#shared) — TARGET
@@ -157,18 +157,41 @@ enum values, or a raw Prisma call **is a refactor target.**
 - A service may call Prisma directly for trivial CRUD; extract a util only when
   the same query/filter is needed in **two** places.
 
-### 4. One error taxonomy, mapped centrally
+### 4. One error taxonomy (typed errors carry their own status)
 
-- Define domain error types once (e.g. `NoteNotFound`, `Unauthorized`) and have
-  **services throw them**. Map them to HTTP status codes in **one place** — a
-  Nitro error hook in `server/plugins/`:
+- Define domain error types once in `server/utils/errors.ts` (e.g.
+  `NoteNotFound`, `Unauthorized`) and have **services throw them** instead of
+  scattering `createError({ statusCode })` through the business logic. Each
+  error type defines its HTTP status in exactly **one place** — its class.
 
   ```ts
-  // server/plugins/error-mapper.ts
-  export default defineNitroPlugin((nitro) => {
-    nitro.hooks.hook('error', (err) => { /* domain error → createError(status) */ })
-  })
+  // server/utils/errors.ts
+  import { H3Error } from 'h3'
+
+  export class DomainError extends H3Error {
+    constructor(statusCode: number, statusMessage: string, message?: string) {
+      super(message ?? statusMessage)
+      this.name = new.target.name
+      this.statusCode = statusCode
+      this.statusMessage = statusMessage
+    }
+  }
+  export class NoteNotFound extends DomainError {
+    constructor(id?: string) { super(404, 'Note not found', id && `Note ${id} not found`) }
+  }
   ```
+- **Why extend `H3Error`, not a Nitro plugin hook.** The Nitro `error` hook
+  (`nitro.hooks.hook('error', …)`) is **observability-only** — it fires for
+  logging/reporting and *cannot change the response*. Nitro renders the status
+  straight off `error.statusCode`, and only treats an error as "handled" (vs an
+  unhandled 500 with a masked message) when `isError()` is true, which keys off
+  H3Error's static brand that subclasses inherit. So a typed `H3Error` subclass
+  is the framework-native way to get a centrally-defined error that renders with
+  the right status. (A `server/plugins/error-mapper.ts` hook was tried and does
+  not work for this — don't reach for it.)
+- **Validation errors are already 400.** `readValidatedBody` /
+  `getValidatedQuery` wrap a thrown `ZodError` in a 400 at the boundary — no
+  mapping needed.
 - **Handlers never `try/except` business errors.** Let them bubble (mirrors
   Library's "routes never try/except" rule). The only allowed catch is in
   adapters talking to the external auth service / SMTP, where a failure has a
@@ -270,7 +293,9 @@ without HTTP or a real DB.
 - **zod schemas**: shared ones in `shared/schemas/*`; server-only ones beside
   the service. Infer types from them; don't write parallel `type` aliases.
 - **Shared `where`/projection helpers** in `server/utils/` (auto-imported).
-- **Startup concerns** (env validation, error mapping) in `server/plugins/`.
+- **Startup concerns** (env validation) in `server/plugins/`. The **domain
+  error taxonomy** lives in `server/utils/errors.ts` (typed `H3Error`
+  subclasses), not a plugin — see #4.
 - **One composable per concern** in `app/composables/`; extract page logic into
   composables, not vice versa.
 
