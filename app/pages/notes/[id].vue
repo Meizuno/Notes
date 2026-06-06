@@ -1,6 +1,5 @@
 <script setup lang="ts">
-type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
-type Note = { id: string, title: string, folder: string | null, description: string | null, content: string, visibility: Visibility, updated_at: string }
+import type { Note, Visibility } from '#shared/schemas/note'
 
 const route = useRoute()
 const id = String(route.params.id)
