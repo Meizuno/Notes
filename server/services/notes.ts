@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { Prisma } from '@prisma/client'
 import type { CreateNoteInput, UpdateNoteInput, ListNotesQuery } from '#shared/schemas/note'
 import { getPrisma } from '../utils/db'
 import { noteVisibilityWhere } from '../utils/notes'
@@ -32,35 +33,46 @@ export async function createNote(event: H3Event, input: CreateNoteInput) {
 
 export async function updateNote(event: H3Event, id: string, input: UpdateNoteInput) {
   requireAuthUser(event)
-  const db = getPrisma()
 
-  // Shared workspace — any authenticated user may edit any note. Just
-  // verify it exists and isn't soft-deleted.
-  const existing = await db.note.findFirst({ where: { id, is_deleted: false } })
-  if (!existing) throw new NoteNotFound(id)
-
-  // Only write the keys actually present in the body — omission means
-  // "leave unchanged".
-  return db.note.update({
-    where: { id },
-    data: {
-      ...(input.title !== undefined ? { title: input.title } : {}),
-      ...(input.content !== undefined ? { content: input.content } : {}),
-      ...(input.folder !== undefined ? { folder: input.folder || null } : {}),
-      ...(input.description !== undefined ? { description: input.description || null } : {}),
-      ...(input.visibility !== undefined ? { visibility: input.visibility } : {})
+  // Shared workspace — any authenticated user may edit any note. The
+  // existence + not-deleted check rides in the where clause, so this is a
+  // single atomic statement (no read-then-write TOCTOU window). Only the
+  // keys present in the body are written — omission means "leave unchanged"
+  // (schema already trimmed; collapse empty → null for folder/description).
+  try {
+    return await getPrisma().note.update({
+      where: { id, is_deleted: false },
+      data: {
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.content !== undefined ? { content: input.content } : {}),
+        ...(input.folder !== undefined ? { folder: input.folder || null } : {}),
+        ...(input.description !== undefined ? { description: input.description || null } : {}),
+        ...(input.visibility !== undefined ? { visibility: input.visibility } : {})
+      }
+    })
+  }
+  catch (err) {
+    // Prisma adapter boundary: P2025 ("record to update not found") means no
+    // row matched id + is_deleted:false. Translate it into the domain
+    // taxonomy; re-throw anything else. This is the one allowed catch here.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      throw new NoteNotFound(id)
     }
-  })
+    throw err
+  }
 }
 
 export async function deleteNote(event: H3Event, id: string) {
   requireAuthUser(event)
-  const db = getPrisma()
 
-  const existing = await db.note.findFirst({ where: { id, is_deleted: false } })
-  if (!existing) throw new NoteNotFound(id)
-
-  await db.note.update({ where: { id }, data: { is_deleted: true } })
+  // Single-statement soft delete: the existence + not-deleted check rides in
+  // the where clause (no TOCTOU window). updateMany returns a count rather
+  // than throwing, so a zero count is the not-found signal — no try/catch.
+  const { count } = await getPrisma().note.updateMany({
+    where: { id, is_deleted: false },
+    data: { is_deleted: true }
+  })
+  if (count === 0) throw new NoteNotFound(id)
   return { deleted: id }
 }
 

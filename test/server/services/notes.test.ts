@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { H3Event } from 'h3'
+import { Prisma } from '@prisma/client'
 
 // Mock the Prisma singleton before importing the service. Both the
 // service and server/utils/notes pull getPrisma from server/utils/db,
@@ -9,6 +10,7 @@ const note = {
   findFirst: vi.fn(),
   findMany: vi.fn(),
   update: vi.fn(),
+  updateMany: vi.fn(),
   count: vi.fn()
 }
 vi.mock('../../../server/utils/db', () => ({ getPrisma: () => ({ note }) }))
@@ -25,6 +27,7 @@ beforeEach(() => {
   note.findFirst.mockReset()
   note.findMany.mockReset()
   note.update.mockReset()
+  note.updateMany.mockReset()
   note.count.mockReset()
 })
 
@@ -59,45 +62,58 @@ describe('createNote', () => {
 })
 
 describe('updateNote', () => {
-  it('writes only the provided keys', async () => {
-    note.findFirst.mockResolvedValue({ id: 'n1' })
+  it('writes only the provided keys, with the existence filter in the where', async () => {
     note.update.mockResolvedValue({ id: 'n1' })
     await updateNote(eventWith({ id: 'u1' }), 'n1', { title: 'New title' })
     expect(note.update).toHaveBeenCalledWith({
-      where: { id: 'n1' },
+      where: { id: 'n1', is_deleted: false },
       data: { title: 'New title' }
     })
   })
 
   it('collapses an empty folder to null when provided', async () => {
-    note.findFirst.mockResolvedValue({ id: 'n1' })
     note.update.mockResolvedValue({ id: 'n1' })
     await updateNote(eventWith({ id: 'u1' }), 'n1', { folder: '' })
     expect(note.update).toHaveBeenCalledWith({
-      where: { id: 'n1' },
+      where: { id: 'n1', is_deleted: false },
       data: { folder: null }
     })
   })
 
-  it('throws 404 when the note is missing or deleted', async () => {
-    note.findFirst.mockResolvedValue(null)
+  it('translates Prisma P2025 (no matching row) into NoteNotFound', async () => {
+    note.update.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Record to update not found', {
+        code: 'P2025',
+        clientVersion: 'test'
+      })
+    )
     await expect(updateNote(eventWith({ id: 'u1' }), 'gone', { title: 'x' }))
       .rejects.toBeInstanceOf(NoteNotFound)
-    expect(note.update).not.toHaveBeenCalled()
+  })
+
+  it('re-throws non-P2025 Prisma errors', async () => {
+    const other = new Prisma.PrismaClientKnownRequestError('boom', {
+      code: 'P2002',
+      clientVersion: 'test'
+    })
+    note.update.mockRejectedValue(other)
+    await expect(updateNote(eventWith({ id: 'u1' }), 'n1', { title: 'x' })).rejects.toBe(other)
   })
 })
 
 describe('deleteNote', () => {
-  it('soft-deletes and returns the id', async () => {
-    note.findFirst.mockResolvedValue({ id: 'n1' })
-    note.update.mockResolvedValue({ id: 'n1' })
+  it('soft-deletes via updateMany and returns the id', async () => {
+    note.updateMany.mockResolvedValue({ count: 1 })
     const result = await deleteNote(eventWith({ id: 'u1' }), 'n1')
-    expect(note.update).toHaveBeenCalledWith({ where: { id: 'n1' }, data: { is_deleted: true } })
+    expect(note.updateMany).toHaveBeenCalledWith({
+      where: { id: 'n1', is_deleted: false },
+      data: { is_deleted: true }
+    })
     expect(result).toEqual({ deleted: 'n1' })
   })
 
-  it('throws 404 when the note is missing', async () => {
-    note.findFirst.mockResolvedValue(null)
+  it('throws 404 when no row was affected', async () => {
+    note.updateMany.mockResolvedValue({ count: 0 })
     await expect(deleteNote(eventWith({ id: 'u1' }), 'gone')).rejects.toBeInstanceOf(NoteNotFound)
   })
 })
