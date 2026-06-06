@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
+import type { Visibility } from '#shared/schemas/note'
 
 const route = useRoute()
 

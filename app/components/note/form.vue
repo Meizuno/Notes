@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { Visibility } from '#shared/schemas/note'
+
 type FlatNote = { id: string, title: string, folder: string | null }
-type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
 
 const props = defineProps<{
   saving?: boolean
