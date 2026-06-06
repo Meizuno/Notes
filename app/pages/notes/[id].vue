@@ -40,11 +40,11 @@ if (noteMeta.value) {
 // so it remounts and re-fetches after a save.
 const {
   editing,
-  editTitle,
-  editFolder,
-  editDescription,
-  editContent,
-  editVisibility,
+  title,
+  folder,
+  description,
+  content,
+  visibility,
   saving,
   loadingEdit,
   version,
@@ -59,11 +59,11 @@ const {
     <!-- Edit mode -->
     <template v-if="editing">
       <NoteForm
-        v-model:title="editTitle"
-        v-model:folder="editFolder"
-        v-model:description="editDescription"
-        v-model:content="editContent"
-        v-model:visibility="editVisibility"
+        v-model:title="title"
+        v-model:folder="folder"
+        v-model:description="description"
+        v-model:content="content"
+        v-model:visibility="visibility"
         :saving="saving"
         submit-label="Save"
         @submit="saveEdit"

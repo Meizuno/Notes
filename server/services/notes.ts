@@ -2,7 +2,7 @@ import type { H3Event } from 'h3'
 import type { CreateNoteInput, UpdateNoteInput, ListNotesQuery } from '#shared/schemas/note'
 import { getPrisma } from '../utils/db'
 import { requireAuthUser, viewerId } from '../utils/auth'
-import { buildNoteUpdateData, listNotesScoped, softDeleteScoped, updateNoteScoped } from '../utils/notes'
+import { NOTE_SELECT, buildNoteUpdateData, listNotesScoped, softDeleteScoped, updateNoteScoped } from '../utils/notes'
 
 // HTTP use-cases for the Note resource. Thin wrappers over the shared,
 // transport-agnostic data-access in ../utils/notes (which owns the
@@ -26,7 +26,9 @@ export async function createNote(event: H3Event, input: CreateNoteInput) {
       folder: input.folder || null,
       description: input.description || null,
       visibility: input.visibility
-    }
+    },
+    // Same NoteRow projection as update/get — don't echo user_id/is_deleted.
+    select: NOTE_SELECT
   })
 }
 

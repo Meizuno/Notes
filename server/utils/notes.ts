@@ -46,7 +46,9 @@ export type NoteListParams = {
   offset: number
 }
 
-const NOTE_SELECT = {
+// The single-note projection (NoteRow). Exported so create/update/get all
+// return the same shape — the wire Note plus created_at.
+export const NOTE_SELECT = {
   id: true,
   title: true,
   folder: true,

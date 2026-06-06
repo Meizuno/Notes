@@ -1,32 +1,21 @@
 <script setup lang="ts">
-import type { Visibility } from '#shared/schemas/note'
-
 const route = useRoute()
+const { createNote } = useNotesApi()
+const { title, folder, description, content, visibility, toCreateInput } = useNoteForm()
 
 // Pre-fill from query params:
 //   ?title=Foo  — entry point for "create note with this title".
 //   ?folder=A/B — "new note in this folder" entry points.
-const title = ref(String(route.query.title ?? ''))
-const folder = ref(String(route.query.folder ?? ''))
-const description = ref('')
-const content = ref('')
-const visibility = ref<Visibility>('PROTECTED')
+title.value = String(route.query.title ?? '')
+folder.value = String(route.query.folder ?? '')
+
 const saving = ref(false)
 
 async function save() {
   if (!title.value.trim() || saving.value) return
   saving.value = true
   try {
-    const note = await $fetch<{ id: string }>('/api/notes', {
-      method: 'POST',
-      body: {
-        title: title.value,
-        folder: folder.value.trim() || null,
-        description: description.value.trim() || null,
-        content: content.value,
-        visibility: visibility.value
-      }
-    })
+    const note = await createNote(toCreateInput())
     await navigateTo(`/notes/${note.id}`)
   }
   finally { saving.value = false }

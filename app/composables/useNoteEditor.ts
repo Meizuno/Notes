@@ -1,56 +1,37 @@
-import type { Note, Visibility } from '#shared/schemas/note'
-
-// Client-side use-case for editing a single note: holds the edit-form
-// state and the load / save / delete flows for /notes/[id]. The page
-// stays thin (routing + SEO) and binds these to <NoteForm>.
+// Client-side use-case for editing a single note. Holds the edit-specific
+// concerns (view-mode toggle, remount key, delete-with-confirm) and drives
+// the shared form state (useNoteForm) + the typed API wrapper (useNotesApi).
 //
-// The note is NOT fetched for viewing — that's <NoteStream>'s job. We
-// only fetch on startEdit, to populate the form.
+// The note is NOT fetched for viewing — that's <NoteStream>'s job. We only
+// fetch on startEdit, to populate the form.
 export function useNoteEditor(id: string) {
+  const { title, folder, description, content, visibility, populate, toUpdateInput } = useNoteForm()
+  const notesApi = useNotesApi()
+  const { confirm } = useConfirm()
+
   const editing = ref(false)
-  const editTitle = ref('')
-  const editFolder = ref('')
-  const editDescription = ref('')
-  const editContent = ref('')
-  const editVisibility = ref<Visibility>('PROTECTED')
   const saving = ref(false)
   const loadingEdit = ref(false)
 
-  // Bumped on every successful save; used as the :key on <NoteStream>
-  // so it remounts and re-fetches the freshly-saved content.
+  // Bumped on every successful save; used as the :key on <NoteStream> so it
+  // remounts and re-fetches the freshly-saved content.
   const version = ref(0)
-
-  const { confirm } = useConfirm()
 
   async function startEdit() {
     if (loadingEdit.value) return
     loadingEdit.value = true
     try {
-      const note = await $fetch<Note>(`/api/notes/${id}`)
-      editTitle.value = note.title
-      editFolder.value = note.folder ?? ''
-      editDescription.value = note.description ?? ''
-      editContent.value = note.content
-      editVisibility.value = note.visibility
+      populate(await notesApi.getNote(id))
       editing.value = true
     }
     finally { loadingEdit.value = false }
   }
 
   async function saveEdit() {
-    if (!editTitle.value.trim() || saving.value) return
+    if (!title.value.trim() || saving.value) return
     saving.value = true
     try {
-      await $fetch(`/api/notes/${id}` as string, {
-        method: 'PUT',
-        body: {
-          title: editTitle.value,
-          folder: editFolder.value.trim() || null,
-          description: editDescription.value.trim() || null,
-          content: editContent.value,
-          visibility: editVisibility.value
-        }
-      })
+      await notesApi.updateNote(id, toUpdateInput())
       version.value++
       editing.value = false
     }
@@ -64,17 +45,17 @@ export function useNoteEditor(id: string) {
       confirmLabel: 'Delete'
     })
     if (!ok) return
-    await $fetch(`/api/notes/${id}` as string, { method: 'DELETE' })
+    await notesApi.deleteNote(id)
     await navigateTo('/')
   }
 
   return {
     editing,
-    editTitle,
-    editFolder,
-    editDescription,
-    editContent,
-    editVisibility,
+    title,
+    folder,
+    description,
+    content,
+    visibility,
     saving,
     loadingEdit,
     version,

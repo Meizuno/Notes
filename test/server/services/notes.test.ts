@@ -38,15 +38,15 @@ describe('createNote', () => {
       description: null,
       visibility: 'PUBLIC'
     })
-    expect(note.create).toHaveBeenCalledWith({
-      data: {
-        user_id: 'u1',
-        title: 'Hello',
-        content: 'body',
-        folder: null,
-        description: null,
-        visibility: 'PUBLIC'
-      }
+    // (createNote also passes select: NOTE_SELECT to project the response;
+    // assert on the data payload here.)
+    expect(note.create.mock.calls[0][0].data).toEqual({
+      user_id: 'u1',
+      title: 'Hello',
+      content: 'body',
+      folder: null,
+      description: null,
+      visibility: 'PUBLIC'
     })
   })
 
