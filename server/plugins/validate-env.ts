@@ -5,6 +5,12 @@ import { envSchema } from '../utils/env'
 // immediately rather than surfacing a 500 on the first request that
 // happens to need it.
 export default defineNitroPlugin(() => {
+  // Skip during build-time prerendering: `nuxt build` boots a throwaway
+  // Nitro instance to prerender routes, which legitimately has no
+  // production env. Fail-fast validation is a real-server-startup
+  // concern, so don't abort the build here.
+  if (import.meta.prerender) return
+
   const result = envSchema.safeParse(process.env)
   if (!result.success) {
     console.error('[env] Invalid environment configuration — refusing to start:')
