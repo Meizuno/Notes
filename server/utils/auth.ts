@@ -37,8 +37,20 @@ function readCookie(event: H3Event, name: string): string | null {
   return match?.[1] ?? null
 }
 
-// Stores refreshed token per SSR render so internal API calls can use it
-let ssrRefreshedToken: string | null = null
+// On SSR an inner /api fetch reuses a forward of the outer request's cookie
+// header. After a refresh we rewrite THIS request's cookie header so those
+// inner fetches carry the fresh pair. This replaces a former module-level
+// `ssrRefreshedToken` bridge, which under concurrent renders could leak one
+// user's refreshed token into another's. Request-scoped: only this event.
+function forwardRefreshedCookies(event: H3Event, accessToken: string, refreshToken: string) {
+  const req = event.node?.req
+  if (!req) return
+  const others = (getHeader(event, 'cookie') ?? '')
+    .split(/;\s*/)
+    .filter(Boolean)
+    .filter(pair => !pair.startsWith('rb_access=') && !pair.startsWith('rb_refresh='))
+  req.headers.cookie = [...others, `rb_access=${accessToken}`, `rb_refresh=${refreshToken}`].join('; ')
+}
 
 /**
  * Authenticate the request. Checks access token first, then tries refresh.
@@ -48,19 +60,15 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
   // Already authenticated (e.g. by a previous middleware run)
   if (event.context.user) return event.context.user as AuthUser
 
-  // 1. Check Bearer header (MCP clients), then SSR-refreshed token,
-  //    then the cookie. `ssrRefreshedToken` must take priority over
-  //    the cookie: when an outer page-level middleware refreshes
-  //    during the same render, it sets new cookies on the response
-  //    but the inner SSR fetch still sees the *original* (stale)
-  //    cookie in its forwarded headers. Preferring the cookie there
-  //    would short-circuit the `??` chain on a value that's already
-  //    expired (and whose refresh-pair has been burned), producing a
-  //    spurious 401 on inner /api/auth/me-style calls.
+  // Access token: a Bearer header (MCP clients) else the rb_access cookie.
+  // On SSR the inner /api fetches inherit a forward of this request's cookie
+  // header; the refresh path below rewrites that header in place, so inner
+  // calls read the fresh token straight from the cookie — no shared
+  // cross-request state needed.
   const header = getHeader(event, 'authorization')
   const accessToken = header?.toLowerCase().startsWith('bearer ')
     ? header.slice(7).trim()
-    : (ssrRefreshedToken ?? readCookie(event, 'rb_access') ?? '')
+    : (readCookie(event, 'rb_access') ?? '')
 
   const userId = await validateToken(accessToken)
   if (userId) {
@@ -82,9 +90,9 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
     )
 
     setAuthCookies(event, result.access_token, result.refresh_token)
-    // Store for other SSR internal fetches in the same render
-    ssrRefreshedToken = result.access_token
-    setTimeout(() => { ssrRefreshedToken = null }, 5_000)
+    // Rewrite this request's cookie header so SSR inner fetches forward the
+    // fresh pair instead of the stale (rotated-away) one the browser sent.
+    forwardRefreshedCookies(event, result.access_token, result.refresh_token)
 
     const newUserId = await validateToken(result.access_token)
     if (!newUserId) return null
