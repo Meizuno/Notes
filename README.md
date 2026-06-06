@@ -1,10 +1,14 @@
 # Notes
 
 A self-hosted notes vault — a shared workspace where any authenticated user can
-read, create, edit, and delete notes. Notes are grouped into implicit folders
+read, create, edit, and delete notes, except `PRIVATE` notes which are visible
+and editable only to their creator. Notes are grouped into implicit folders
 (slash-separated paths) and browsable as a force-directed graph or a folder
 tree. Each note has a visibility tier (`PRIVATE` / `PROTECTED` / `PUBLIC`) that
-gates read access; public notes are SSR-rendered for search engines.
+gates read access (and, for `PRIVATE`, write access too); public notes are
+SSR-rendered for search engines. The visibility filter and the scoped note
+CRUD live in one place (`server/utils/notes.ts`), shared by the HTTP API, the
+MCP tools, and the prompt endpoints.
 
 ## Stack
 
