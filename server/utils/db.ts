@@ -1,15 +1,14 @@
-import { createError } from 'h3'
 import { PrismaClient } from '@prisma/client'
 
+// Prisma singleton. The connection string comes from runtimeConfig
+// (NUXT_DATABASE_URL) — never read process.env here. Presence is
+// guaranteed by the startup env validation (server/plugins/validate-env),
+// so there's no per-request fallback/throw.
 let prisma: PrismaClient | null = null
 
 export const getPrisma = () => {
   if (!prisma) {
-    const datasourceUrl = process.env.NUXT_DATABASE_URL
-    if (!datasourceUrl) {
-      throw createError({ statusCode: 500, statusMessage: 'NUXT_DATABASE_URL is not configured.' })
-    }
-    prisma = new PrismaClient({ datasourceUrl })
+    prisma = new PrismaClient({ datasourceUrl: useRuntimeConfig().databaseUrl })
   }
   return prisma
 }
