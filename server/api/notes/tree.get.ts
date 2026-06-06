@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const db = getPrisma()
 
   return db.note.findMany({
-    where: noteVisibilityWhere(event),
+    where: noteVisibilityWhere(viewerId(event)),
     select: { id: true, title: true, folder: true, created_at: true },
     orderBy: { created_at: 'asc' }
   })

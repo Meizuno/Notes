@@ -3,6 +3,15 @@ import type { PrismaClient } from '@prisma/client'
 import { NoteVisibility } from '@prisma/client'
 import { z } from 'zod/v3'
 import { toJson } from './helpers'
+import { NoteNotFound } from '../errors'
+import {
+  buildNoteUpdateData,
+  listNotesScoped,
+  loadNoteScoped,
+  makeNoteSnippet,
+  softDeleteScoped,
+  updateNoteScoped
+} from '../notes'
 
 // MCP tools for the shared notes vault. The MCP endpoint requires
 // auth (session cookie or trusted-service API key + x-user-id), so
@@ -20,20 +29,9 @@ import { toJson } from './helpers'
 const visibilitySchema = z.enum(['PRIVATE', 'PROTECTED', 'PUBLIC'])
   .describe('Visibility tier. PRIVATE: only the creator can read. PROTECTED: any signed-in user can read (default). PUBLIC: anyone with the URL can read.')
 
-// PRIVATE notes are owner-only; PROTECTED / PUBLIC are shared. This
-// where-fragment lets a user see (and update) every shared note plus
-// their own PRIVATE notes, mirroring the read filter used by the
-// HTTP endpoints.
-function visibilityScopeFor(userId: string) {
-  return {
-    is_deleted: false,
-    OR: [
-      { visibility: { not: NoteVisibility.PRIVATE } },
-      { visibility: NoteVisibility.PRIVATE, user_id: userId }
-    ]
-  }
-}
-
+// Visibility scoping + atomic scoped CRUD live in ../notes (shared with the
+// HTTP services and the prompt endpoints); these tools pass the MCP `userId`
+// as the viewer. `db` is still used directly for create_note.
 export function registerNoteTools(server: McpServer, db: PrismaClient, userId: string) {
   server.registerTool(
     'list_notes',
@@ -47,60 +45,27 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
       })
     },
     async ({ query, folder, limit, offset }) => {
-      const take = Math.min(limit ?? 20, 100)
-      const skip = offset ?? 0
-      const where = {
-        ...visibilityScopeFor(userId),
-        ...(query ? {
-          AND: [{
-            OR: [
-              { title:   { contains: query, mode: 'insensitive' as const } },
-              { content: { contains: query, mode: 'insensitive' as const } }
-            ]
-          }]
-        } : {}),
-        ...(folder ? { folder: { startsWith: folder } } : {})
-      }
-
-      const [notes, total] = await Promise.all([
-        db.note.findMany({
-          where,
-          select: {
-            id: true,
-            title: true,
-            folder: true,
-            content: true,
-            visibility: true,
-            updated_at: true
-          },
-          orderBy: { updated_at: 'desc' },
-          take,
-          skip
-        }),
-        db.note.count({ where })
-      ])
-
-      const makeSnippet = (content: string) => {
-        if (!query) return null
-        const idx = content.toLowerCase().indexOf(query.toLowerCase())
-        if (idx < 0) return null
-        const start = Math.max(0, idx - 40)
-        const end = Math.min(content.length, idx + query.length + 40)
-        return (start > 0 ? '…' : '') + content.slice(start, end) + (end < content.length ? '…' : '')
-      }
+      const limitN = Math.min(limit ?? 20, 100)
+      const offsetN = offset ?? 0
+      const { items, total } = await listNotesScoped(userId, {
+        search: query,
+        folder,
+        limit: limitN,
+        offset: offsetN
+      })
 
       return toJson({
-        items: notes.map(n => ({
+        items: items.map(n => ({
           id: n.id,
           title: n.title,
           folder: n.folder,
           visibility: n.visibility,
           hasContent: n.content.length > 0,
-          snippet: makeSnippet(n.content),
+          snippet: makeNoteSnippet(n.content, query),
           updatedAt: n.updated_at
         })),
         total,
-        hasMore: skip + notes.length < total
+        hasMore: offsetN + items.length < total
       })
     }
   )
@@ -114,19 +79,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
       })
     },
     async ({ id }) => {
-      const note = await db.note.findFirst({
-        where: { id, ...visibilityScopeFor(userId) },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          content: true,
-          folder: true,
-          visibility: true,
-          created_at: true,
-          updated_at: true
-        }
-      })
+      const note = await loadNoteScoped(userId, id)
       if (!note) return toJson({ error: 'Note not found' })
       return toJson(note)
     }
@@ -185,34 +138,31 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
       })
     },
     async ({ id, title, content, description, folder, visibility }) => {
-      // Scope check up front so a hit on someone else's PRIVATE note
-      // returns the same "not found" shape as a missing id, instead
-      // of leaking existence via a different error.
-      const existing = await db.note.findFirst({
-        where: { id, ...visibilityScopeFor(userId) },
-        select: { id: true }
-      })
-      if (!existing) return toJson({ error: 'Note not found' })
-
-      const updated = await db.note.update({
-        where: { id },
-        data: {
-          ...(title !== undefined ? { title: title.trim() } : {}),
-          ...(content !== undefined ? { content } : {}),
-          ...(folder !== undefined ? { folder: folder?.trim() || null } : {}),
-          ...(description !== undefined ? { description: description?.trim() || null } : {}),
-          ...(visibility !== undefined ? { visibility } : {})
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          folder: true,
-          visibility: true,
-          updated_at: true
-        }
-      })
-      return toJson(updated)
+      // updateNoteScoped carries the existence + visibility filter in the
+      // where clause (atomic, no read-then-write) and throws NoteNotFound
+      // when no row matches — including a hit on someone else's PRIVATE
+      // note, which collapses to the same "not found" shape as a missing id.
+      try {
+        const updated = await updateNoteScoped(
+          userId,
+          id,
+          buildNoteUpdateData({ title, content, description, folder, visibility })
+        )
+        return toJson({
+          id: updated.id,
+          title: updated.title,
+          description: updated.description,
+          folder: updated.folder,
+          visibility: updated.visibility,
+          updated_at: updated.updated_at
+        })
+      }
+      catch (err) {
+        // MCP returns tool-result JSON, not HTTP errors — translate the
+        // domain not-found into the tool's "not found" shape.
+        if (err instanceof NoteNotFound) return toJson({ error: 'Note not found' })
+        throw err
+      }
     }
   )
 
@@ -225,17 +175,16 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
       })
     },
     async ({ id }) => {
-      // Same scope check as update_note — collapsing "not yours" into
-      // "not found" keeps existence of other users' PRIVATE notes
-      // from leaking via the error shape.
-      const existing = await db.note.findFirst({
-        where: { id, ...visibilityScopeFor(userId) },
-        select: { id: true }
-      })
-      if (!existing) return toJson({ error: 'Note not found' })
-
-      await db.note.update({ where: { id }, data: { is_deleted: true } })
-      return toJson({ deleted: id })
+      // softDeleteScoped applies the same visibility scope and reports a
+      // zero affected-row count as not-found — so "not yours" collapses to
+      // "not found" without a separate read.
+      try {
+        return toJson(await softDeleteScoped(userId, id))
+      }
+      catch (err) {
+        if (err instanceof NoteNotFound) return toJson({ error: 'Note not found' })
+        throw err
+      }
     }
   )
 }
