@@ -14,6 +14,8 @@ type ChunkAst = Awaited<ReturnType<typeof parseMarkdown>>['body']
 
 const props = defineProps<{ id: string }>()
 
+const notesApi = useNotesApi()
+
 const meta = ref<Meta | null>(null)
 const chunks = ref<ChunkAst[]>([])
 const done = ref(false)
@@ -124,7 +126,7 @@ function enableCheckboxes(node: { tag?: string, props?: Record<string, unknown>,
 // back together from what the renderer sees.
 async function fetchSource() {
   try {
-    const note = await $fetch<{ content: string }>(`/api/notes/${props.id}`)
+    const note = await notesApi.getNote(props.id)
     sourceContent.value = note.content
   }
   catch { sourceContent.value = null }
@@ -143,62 +145,24 @@ function persistContent() {
   const prev = savePending ?? Promise.resolve()
   const snapshot = sourceContent.value
   savePending = prev.catch(() => {}).then(() =>
-    $fetch(`/api/notes/${props.id}` as string, {
-      method: 'PUT',
-      body: { content: snapshot }
-    }).then(() => undefined)
+    notesApi.updateNote(props.id, { content: snapshot }).then(() => undefined)
   )
 }
 
-// Walks the source line-by-line (skipping fenced code) and yields
-// every heading line with its document-order index, the level (1-6),
-// and the trailing `<!-- collapsed -->` marker if any. Used by both
-// the collapsed-state computation and the toggle write path so the
-// two stay in lockstep.
-const COLLAPSED_RE = /<!--\s*collapsed\s*-->/
-
-function* iterHeadings(content: string): Generator<{ idx: number, line: number, level: number, text: string, marker: boolean }> {
-  const lines = content.split('\n')
-  let inFence = false
-  let idx = 0
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (/^\s*```/.test(line)) { inFence = !inFence; continue }
-    if (inFence) continue
-    const m = line.match(/^(#{1,6})\s+(.+?)\s*$/)
-    if (!m) continue
-    const marker = COLLAPSED_RE.test(m[2]!)
-    const text = m[2]!.replace(COLLAPSED_RE, '').trim()
-    yield { idx, line: i, level: m[1]!.length, text, marker }
-    idx++
-  }
-}
-
-// Document-order indices of headings whose source line carries the
-// `<!-- collapsed -->` marker. Recomputed automatically when source
-// changes — that's what drives the visual fold state.
-const collapsedIndices = computed<Set<number>>(() => {
-  const set = new Set<number>()
-  if (!sourceContent.value) return set
-  for (const h of iterHeadings(sourceContent.value)) {
-    if (h.marker) set.add(h.idx)
-  }
-  return set
-})
+// Collapse state is derived from the `<!-- collapsed -->` markers in the
+// source; the pure heading/marker logic lives in app/utils/markdown-source
+// (auto-imported, unit-tested). Recomputed when source changes — that's what
+// drives the visual fold state.
+const collapsedIndices = computed<Set<number>>(() =>
+  sourceContent.value ? getCollapsedIndices(sourceContent.value) : new Set<number>()
+)
 
 function toggleHeadingByIndex(targetIdx: number) {
   if (sourceContent.value === null) return
-  const lines = sourceContent.value.split('\n')
-  for (const h of iterHeadings(sourceContent.value)) {
-    if (h.idx !== targetIdx) continue
-    const hashes = '#'.repeat(h.level)
-    lines[h.line] = h.marker
-      ? `${hashes} ${h.text}`
-      : `${hashes} ${h.text} <!-- collapsed -->`
-    sourceContent.value = lines.join('\n')
-    persistContent()
-    return
-  }
+  const next = toggleHeadingCollapsed(sourceContent.value, targetIdx)
+  if (next === sourceContent.value) return  // index didn't match — no-op
+  sourceContent.value = next
+  persistContent()
 }
 
 // Walks the rendered prose container, treats it as a flat sequence
@@ -370,30 +334,6 @@ onBeforeUnmount(() => {
   controller?.abort()
   observer?.disconnect()
 })
-
-// Walks the markdown line-by-line, skipping fenced code blocks, and
-// flips the Nth GFM task-list checkbox. Returns the new source or
-// `null` if the index doesn't match — which would mean the DOM and
-// the cached content drifted, in which case we silently bail rather
-// than corrupt the note.
-function toggleNthTask(content: string, n: number, checked: boolean): string | null {
-  const lines = content.split('\n')
-  let inFence = false
-  let count = 0
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    if (/^\s*```/.test(line)) { inFence = !inFence; continue }
-    if (inFence) continue
-    const m = line.match(/^(\s*[-*+] +)\[([ xX])\]/)
-    if (!m) continue
-    if (count === n) {
-      lines[i] = m[1] + (checked ? '[x]' : '[ ]') + line.slice(m[0].length)
-      return lines.join('\n')
-    }
-    count++
-  }
-  return null
-}
 
 async function onCheckboxChange(e: Event) {
   const input = e.target as HTMLInputElement
