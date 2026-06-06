@@ -6,6 +6,6 @@ export default defineEventHandler(async (event) => {
   // loadNote(). A private note simply returns 404 to anon, matching
   // the response for non-existent ids (avoids leaking existence).
   const note = await loadNote(event, id)
-  if (!note) throw createError({ statusCode: 404, statusMessage: 'Note not found' })
+  if (!note) throw new NoteNotFound(id)
   return note
 })

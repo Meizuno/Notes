@@ -1,5 +1,6 @@
-import { getCookie, getHeader, setCookie, deleteCookie, createError } from 'h3'
+import { getCookie, getHeader, setCookie, deleteCookie } from 'h3'
 import type { H3Event } from 'h3'
+import { Unauthorized } from './errors'
 
 export type AuthUser = {
   id: string
@@ -99,7 +100,7 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
 /** Require authenticated user or throw 401 */
 export function requireAuthUser(event: H3Event): AuthUser {
   const user = event.context.user as AuthUser | undefined
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+  if (!user) throw new Unauthorized()
   return user
 }
 
