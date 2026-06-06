@@ -54,6 +54,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Postgres connection string, from NUXT_DATABASE_URL. Validated at
+    // startup (server/plugins/validate-env) and consumed by getPrisma.
+    databaseUrl: '',
     authServiceUrl: '',
     // Shared secret ai-chat presents as `x-api-key` when calling
     // /api/prompts/* endpoints on behalf of a user. Empty in dev

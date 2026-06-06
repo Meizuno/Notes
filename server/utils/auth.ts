@@ -9,7 +9,9 @@ export type AuthUser = {
   picture?: string | null
 }
 
-const isSecure = () => process.env.NODE_ENV === 'production'
+// Secure cookies everywhere except the dev server (http localhost).
+// import.meta.dev is the Nuxt-native signal — avoids reading process.env.
+const isSecure = () => !import.meta.dev
 
 /** Validate a token string against the auth service */
 async function validateToken(token: string): Promise<string | null> {
