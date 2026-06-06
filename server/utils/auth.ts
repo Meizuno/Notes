@@ -114,6 +114,15 @@ export function requireAuthUser(event: H3Event): AuthUser {
   return user
 }
 
+/**
+ * The viewer's user id for visibility scoping, or null for anonymous.
+ * Bridges the HTTP transport (event.context.user) to the viewer-id the
+ * note data-access functions expect.
+ */
+export function viewerId(event: H3Event): string | null {
+  return (event.context.user as AuthUser | undefined)?.id ?? null
+}
+
 export function setAuthCookies(event: H3Event, accessToken: string, refreshToken: string) {
   const secure = isSecure()
   setCookie(event, 'rb_access', accessToken, {

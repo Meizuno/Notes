@@ -50,7 +50,9 @@ const leafName = (path: string): string => {
 }
 
 export default defineEventHandler(async (event) => {
-  verifyPromptAccess(event)
+  // Viewer scope for every query below: the session user, an API-key
+  // call's x-user-id, or null (PUBLIC only). Throws if unauthenticated.
+  const viewer = promptViewerId(event)
   const db = getPrisma()
 
   const query = getQuery(event)
@@ -61,22 +63,20 @@ export default defineEventHandler(async (event) => {
   const offset = Number(query.offset) || 0
   const view = typeof query.view === 'string' ? query.view : ''
 
-  // Single-note detail.
+  // Single-note detail — scoped, so another user's PRIVATE note 404s
+  // instead of leaking.
   if (noteId) {
-    const note = await db.note.findFirst({
-      where: { id: noteId, is_deleted: false },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        folder: true,
-        updated_at: true
-      }
-    })
-    if (!note) throw createError({ statusCode: 404, statusMessage: 'Note not found' })
+    const note = await loadNoteScoped(viewer, noteId)
+    if (!note) throw new NoteNotFound(noteId)
     return {
       component: 'note-detail',
-      note
+      note: {
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        folder: note.folder,
+        updated_at: note.updated_at
+      }
     }
   }
 
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
   // it would see if logged into the notes app directly.
   if (view === 'graph') {
     const allNotes = await db.note.findMany({
-      where: { is_deleted: false },
+      where: noteVisibilityWhere(viewer),
       select: { id: true, title: true, folder: true }
     })
 
@@ -139,7 +139,7 @@ export default defineEventHandler(async (event) => {
   // since the row count is small (titles + folders only).
   if (view === 'folders') {
     const allNotes = await db.note.findMany({
-      where: { is_deleted: false },
+      where: noteVisibilityWhere(viewer),
       select: {
         id: true,
         title: true,
@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
           id: n.id,
           title: n.title,
           folder: n.folder,
-          snippet: n.content ? n.content.slice(0, 120).trim() + (n.content.length > 120 ? '…' : '') : null,
+          snippet: makeNoteSnippet(n.content),
           hasContent: n.content.length > 0,
           updated_at: n.updated_at
         }))
@@ -179,43 +179,15 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // List view.
-  const where = {
-    is_deleted: false,
-    ...(search ? {
-      OR: [
-        { title:   { contains: search, mode: 'insensitive' as const } },
-        { content: { contains: search, mode: 'insensitive' as const } }
-      ]
-    } : {}),
-    // Folder filter is a prefix match, so passing "Programming" also
-    // includes notes under "Programming/Rust", matching the sidebar
-    // tree's "click a parent → see everything inside" behaviour.
-    ...(folder ? { folder: { startsWith: folder } } : {})
-  }
-
-  // Folder summary is computed across the full vault (not the filter)
-  // so the chips remain stable as the user filters — clicking one
-  // narrows the list, the other counts stay put.
-  const [allFolders, items, total] = await Promise.all([
+  // List view. Items + total come from the shared scoped list helper; the
+  // folder summary is computed across the full (scoped) vault so the chips
+  // stay stable as the user filters.
+  const [allFolders, { items, total }] = await Promise.all([
     db.note.findMany({
-      where: { is_deleted: false },
+      where: noteVisibilityWhere(viewer),
       select: { folder: true }
     }),
-    db.note.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        folder: true,
-        content: true,
-        updated_at: true
-      },
-      orderBy: { updated_at: 'desc' },
-      skip: offset,
-      take: limit
-    }),
-    db.note.count({ where })
+    listNotesScoped(viewer, { search, folder, limit, offset })
   ])
 
   // Roll notes up to top-level folders. A note in "Programming/Rust"
@@ -231,19 +203,6 @@ export default defineEventHandler(async (event) => {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
 
-  const makeSnippet = (content: string) => {
-    if (!content) return null
-    if (search) {
-      const idx = content.toLowerCase().indexOf(search.toLowerCase())
-      if (idx >= 0) {
-        const start = Math.max(0, idx - 40)
-        const end = Math.min(content.length, idx + search.length + 40)
-        return (start > 0 ? '…' : '') + content.slice(start, end) + (end < content.length ? '…' : '')
-      }
-    }
-    return content.slice(0, 120).trim() + (content.length > 120 ? '…' : '')
-  }
-
   return {
     component: 'notes',
     folders,
@@ -251,7 +210,7 @@ export default defineEventHandler(async (event) => {
       id: n.id,
       title: n.title,
       folder: n.folder,
-      snippet: makeSnippet(n.content),
+      snippet: makeNoteSnippet(n.content, search),
       hasContent: n.content.length > 0,
       updated_at: n.updated_at
     })),

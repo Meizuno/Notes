@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
 
   const note = await getPrisma().note.findFirst({
-    where: { id, ...noteVisibilityWhere(event) },
+    where: { id, ...noteVisibilityWhere(viewerId(event)) },
     select: {
       id: true,
       title: true,

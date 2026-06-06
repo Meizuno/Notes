@@ -96,7 +96,7 @@ zod schema (shared/ or server) ── validate + type the input at the boundary 
    ↓
 service (server/services/*)    ── business logic = the Python "use case"
    ↓
-data access (server/utils/*)   ── Prisma queries, visibility filters
+data access (server/utils/notes.ts) ── visibility filter + scoped CRUD (viewer-id based, shared by HTTP/MCP/prompts)
    ↓
 Prisma client                  ── the data abstraction (do NOT wrap it in a Repository)
 ```
@@ -155,11 +155,25 @@ enum values, or a raw Prisma call **is a refactor target.**
 - Prisma **is** the data-access abstraction. A Protocol-style Repository with
   multiple implementations (as in Library) is **over-engineering here** —
   there's no second backend to swap, and Prisma is already typed and mockable.
-- Keep shared queries and `where`-clause builders in `server/utils/` (the
-  existing `noteVisibilityWhere` / `loadNote` in `server/utils/notes.ts` is the
-  right pattern — extend it, don't replace it with ports).
-- A service may call Prisma directly for trivial CRUD; extract a util only when
-  the same query/filter is needed in **two** places.
+- **Note data-access has ONE home: `server/utils/notes.ts`.** It owns the
+  visibility filter and the scoped CRUD as concrete, auto-imported functions —
+  `noteVisibilityWhere`, `listNotesScoped`, `loadNoteScoped`, `updateNoteScoped`,
+  `softDeleteScoped`, plus `makeNoteSnippet` / `buildNoteUpdateData`. Every
+  caller (the HTTP services, the MCP tools, the prompt endpoints) goes through
+  it, so the filter exists exactly once and a new call site can't forget it.
+- **The data layer is transport-agnostic: pass the viewer explicitly** as
+  `viewerId: string | null` (null = anonymous → PUBLIC only). Do NOT read
+  `event.context` inside it — HTTP derives the id with `viewerId(event)`, MCP /
+  prompts pass a header-supplied id. That's what lets the three transports share
+  one module.
+- **Scoped mutations carry the visibility filter IN the `where` clause** so
+  they're a single atomic statement (no read-then-write TOCTOU) and a user can't
+  touch another user's PRIVATE note. Prisma's `P2025` → `NoteNotFound`;
+  `updateMany` count `0` → `NoteNotFound`.
+- A service may call Prisma directly for trivial CRUD (e.g. `createNote`);
+  the moment the same query/filter is needed in **two** places, move it into
+  `server/utils/notes.ts` rather than copying it (that duplication is exactly
+  what drifted before the consolidation).
 
 ### 4. One error taxonomy (typed errors carry their own status)
 

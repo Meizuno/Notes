@@ -9,9 +9,11 @@ datasource db {
   extensions = [pg_trgm]
 }
 
-// Shared notes vault: any authenticated user can read, create,
-// edit, or delete any Note. `user_id` on Note is a creator stamp, not
-// an ACL gate.
+// Shared notes vault: any authenticated user can read, create, edit, or
+// delete any PUBLIC/PROTECTED note. PRIVATE notes are visible and mutable
+// only to their creator, so `user_id` is both the creator stamp and the
+// PRIVATE-tier ACL boundary (enforced by the scoped data-access in
+// server/utils/notes.ts).
 //
 // Notes are grouped by `folder` (slash-separated path). Folders are
 // implicit — never stored as rows; the sidebar tree is derived from
