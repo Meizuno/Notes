@@ -85,9 +85,7 @@ pnpm run lint          # eslint
 pnpm run test          # vitest
 ```
 
-If any fails — **do not push**. Tell the human and stop. Pushing broken code wastes everyone's CI time and creates revert pressure.
-
-> Note: per CLAUDE.md these scripts are a migration TARGET — run the ones that exist; if a script is missing, say so rather than silently skipping the gate.
+If any fails — **do not push**. Tell the human and stop. Pushing broken code wastes everyone's CI time and creates revert pressure. (CI runs the same `verify` job on the PR, so a local failure will fail CI too.)
 
 ### Step 3 — Pick the push command
 

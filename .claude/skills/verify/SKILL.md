@@ -8,16 +8,11 @@ description: Run the project's verification gate — typecheck, lint, tests (plu
 Run the verification suite for this project. **Do this before declaring work
 done** and before any `/git-commit` or `/git-push`.
 
-> **CI does not run these checks.** The GitHub workflow
-> ([.github/workflows/deploy.yml](../../../.github/workflows/deploy.yml)) only
-> builds the Docker image and deploys — there is no test/lint/type gate in CI.
-> That makes this local gate the only safety net. Treat a red check as a real
-> blocker, not advisory.
-
-> Per CLAUDE.md these scripts are a migration **TARGET** — some may not exist
-> yet in `package.json`. Run the ones that exist; if a script is missing, say
-> so explicitly rather than silently skipping it (a skipped check is not a
-> passed check).
+> **CI runs the same gate.** The GitHub workflow
+> ([.github/workflows/deploy.yml](../../../.github/workflows/deploy.yml)) has a
+> `verify` job (typecheck + lint + test) that runs on pushes and PRs;
+> build/deploy depend on it. Running it locally first is what keeps PRs green —
+> treat a red check as a real blocker, not advisory.
 
 ## Core gate (always run)
 

@@ -191,9 +191,7 @@ pnpm run lint          # eslint — must be clean
 pnpm run test          # vitest — must pass
 ```
 
-All three must pass. If any fails, **do not commit** — fix the failure first. Never use `--no-verify` to skip hooks.
-
-> Note: per CLAUDE.md these scripts are a migration TARGET — some may not exist yet. Run the ones that do; if a script is missing, say so rather than silently skipping verification.
+All three must pass. If any fails, **do not commit** — fix the failure first. Never use `--no-verify` to skip hooks. (These scripts exist and CI runs the same gate; for the full thorough suite use `/verify`.)
 
 ### Step 7 — Confirm the commit, then commit
 

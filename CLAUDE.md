@@ -5,11 +5,15 @@ Nitro fullstack app** (Vue 3 + Prisma + Postgres). The rules below adapt the
 Clean-Architecture discipline of the sibling [Library](https://github.com/Meizuno/Library)
 project to the **Nuxt grain** — they are not a port of its hexagonal/DI layout.
 
-> **Status:** This file describes the **target architecture**. Parts of the
-> current tree predate it (fat handlers in `server/api/notes/*`, inline `if`
-> validation, no `server/services/`, no tests). Treat the rules as the
-> direction to migrate toward: **when you touch a handler, refactor it to this
-> shape; don't rewrite untouched code wholesale.**
+> **Status:** This architecture is **realized for the Note resource** — thin
+> handlers, zod boundaries (`shared/schemas/`), a service layer
+> (`server/services/`), a domain error taxonomy (`server/utils/errors.ts`),
+> fail-fast env validation, structured logging, and the `typecheck`/`lint`/
+> `test` gates (run in CI). What is **not** yet migrated: the MCP endpoints
+> (`server/api/mcp.ts`, `server/utils/mcp/*`) and the non-note handlers
+> (`server/api/auth/*`, `graph.get.ts`, `prompts/*`, …) still predate this
+> shape. **When you touch one of those, refactor it to this shape; don't
+> rewrite untouched code wholesale.**
 
 ---
 
@@ -59,22 +63,22 @@ app/                      ── CLIENT (Vue/Nuxt)
 
 server/                   ── SERVER (Nitro)
 ├── api/                  ── thin HTTP handlers (parse → validate → service → return)
-├── services/             ── SERVER use-cases: business logic (TARGET — see below)
+├── services/             ── SERVER use-cases: business logic (notes.ts)
 ├── utils/                ── auto-imported helpers (db client, auth, data access, error taxonomy)
 ├── middleware/           ── auth gate, request logging
 ├── plugins/              ── startup hooks (env validation)
 └── routes/              ── non-API routes (robots.txt, sitemap.xml)
 
-shared/                   ── CROSS-CUTTING types + zod schemas (#shared) — TARGET
+shared/                   ── CROSS-CUTTING types + zod schemas (#shared)
 prisma/                   ── schema, migrations, seed
 ```
 
 Before considering work done:
 
 ```sh
-pnpm run typecheck      # vue-tsc — must be clean (TARGET: add this script)
-pnpm run lint           # eslint — must be clean (TARGET: add @nuxt/eslint)
-pnpm run test           # vitest — must pass (TARGET: add @nuxt/test-utils)
+pnpm run typecheck      # nuxt typecheck (vue-tsc) — must be clean
+pnpm run lint           # eslint (@nuxt/eslint) — must be clean
+pnpm run test           # vitest — must pass
 ```
 
 ---
@@ -82,8 +86,8 @@ pnpm run test           # vitest — must pass (TARGET: add @nuxt/test-utils)
 ## Layering (the core discipline to port)
 
 The Library project's single biggest win is **separating transport, validation,
-business logic, and persistence**. Right now they are fused inside each handler.
-The target layering:
+business logic, and persistence**. The notes resource follows this layering;
+hold the same line for new code:
 
 ```
 HTTP handler (server/api/*)   ── parse params/body, call service, return. NOTHING else.
@@ -260,20 +264,23 @@ enum values, or a raw Prisma call **is a refactor target.**
 - The big TS win over the Python project: **one type from DB to component.**
   Derive request/response types from zod schemas in `shared/`, import them in
   both `server/` and `app/`. **Never** redeclare `type Note = {...}` /
-  `type Visibility = ...` in a `.vue` file — those local copies (currently in
-  `pages/notes/[id].vue`, `components/note/form.vue`) are drift waiting to
-  happen. Import the shared type instead.
+  `type Visibility = ...` in a `.vue` file — import them from
+  `#shared/schemas/note` instead. (The old local copies in
+  `pages/notes/[id].vue` and `components/note/form.vue` have been removed; don't
+  reintroduce them.)
 
 ---
 
-## Tests (the biggest current gap)
+## Tests
 
-Library has 396 tests; this repo has 0. **The refactor and the tests are the
-same motion** — once logic lives in services and composables, it's testable
-without HTTP or a real DB.
+**Vitest + @nuxt/test-utils** are wired up (`pnpm run test`), with coverage for
+the notes service, the zod schemas, the visibility util, the env schema, and
+the error taxonomy. Keep growing it the same way — once logic lives in services
+and composables, it's testable without HTTP or a real DB.
 
-- Runner: **Vitest** + **@nuxt/test-utils** (TARGET — add to devDeps + a
-  `test` script).
+- Runner: **Vitest** + **@nuxt/test-utils** (`vitest.config.ts` defaults to a
+  node environment; opt into the Nuxt env per-file with `// @vitest-environment
+  nuxt` for composable/component tests).
 - **Service tests** (the priority): call the service function with a mocked
   Prisma client + a fake `event.context.user`. No HTTP. This mirrors Library's
   application/use-case tests against in-memory fakes.
@@ -312,9 +319,9 @@ without HTTP or a real DB.
 | Prisma generate | `pnpm run prisma:generate` |
 | Prisma migrate (dev) | `pnpm run prisma:migrate` |
 | Seed DB | `pnpm run prisma:seed` |
-| Typecheck | `pnpm run typecheck` *(TARGET: `nuxt typecheck`)* |
-| Lint | `pnpm run lint` *(TARGET: `@nuxt/eslint`)* |
-| Test | `pnpm run test` *(TARGET: `vitest`)* |
+| Typecheck | `pnpm run typecheck` (`nuxt typecheck`) |
+| Lint | `pnpm run lint` (`eslint .`) |
+| Test | `pnpm run test` (`vitest run`); watch: `pnpm run test:watch` |
 
 ---
 
