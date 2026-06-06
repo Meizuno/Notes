@@ -14,6 +14,7 @@ const note = {
 vi.mock('../../../server/utils/db', () => ({ getPrisma: () => ({ note }) }))
 
 const { createNote, updateNote, deleteNote, listNotes } = await import('../../../server/services/notes')
+const { NoteNotFound, Unauthorized } = await import('../../../server/utils/errors')
 
 function eventWith(user?: { id: string }): H3Event {
   return { context: { user } } as unknown as H3Event
@@ -52,7 +53,7 @@ describe('createNote', () => {
   it('throws when the caller is unauthenticated', async () => {
     await expect(
       createNote(eventWith(), { title: 'x', content: '', folder: null, description: null, visibility: 'PROTECTED' })
-    ).rejects.toMatchObject({ statusCode: 401 })
+    ).rejects.toBeInstanceOf(Unauthorized)
     expect(note.create).not.toHaveBeenCalled()
   })
 })
@@ -81,7 +82,7 @@ describe('updateNote', () => {
   it('throws 404 when the note is missing or deleted', async () => {
     note.findFirst.mockResolvedValue(null)
     await expect(updateNote(eventWith({ id: 'u1' }), 'gone', { title: 'x' }))
-      .rejects.toMatchObject({ statusCode: 404 })
+      .rejects.toBeInstanceOf(NoteNotFound)
     expect(note.update).not.toHaveBeenCalled()
   })
 })
@@ -97,7 +98,7 @@ describe('deleteNote', () => {
 
   it('throws 404 when the note is missing', async () => {
     note.findFirst.mockResolvedValue(null)
-    await expect(deleteNote(eventWith({ id: 'u1' }), 'gone')).rejects.toMatchObject({ statusCode: 404 })
+    await expect(deleteNote(eventWith({ id: 'u1' }), 'gone')).rejects.toBeInstanceOf(NoteNotFound)
   })
 })
 

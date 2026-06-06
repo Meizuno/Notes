@@ -1,9 +1,9 @@
 import type { H3Event } from 'h3'
-import { createError } from 'h3'
 import type { CreateNoteInput, UpdateNoteInput, ListNotesQuery } from '#shared/schemas/note'
 import { getPrisma } from '../utils/db'
 import { noteVisibilityWhere } from '../utils/notes'
 import { requireAuthUser } from '../utils/auth'
+import { NoteNotFound } from '../utils/errors'
 
 // Note use-cases. Plain async functions taking the validated input (and
 // `event` for auth/visibility context) — the Nuxt analog of the Python
@@ -11,9 +11,9 @@ import { requireAuthUser } from '../utils/auth'
 // in Prisma. Inputs are pre-validated by the zod schemas in
 // shared/schemas/note, so these functions trust their shape.
 //
-// NOTE: the 404s below still throw createError directly. Phase 3
-// introduces a domain error taxonomy + central mapper; these are its
-// refactor targets.
+// Errors are the typed domain taxonomy from ../utils/errors (NoteNotFound);
+// requireAuthUser raises Unauthorized. Nitro renders each with its own
+// status — handlers don't translate them.
 
 export async function createNote(event: H3Event, input: CreateNoteInput) {
   const user = requireAuthUser(event)
@@ -37,7 +37,7 @@ export async function updateNote(event: H3Event, id: string, input: UpdateNoteIn
   // Shared workspace — any authenticated user may edit any note. Just
   // verify it exists and isn't soft-deleted.
   const existing = await db.note.findFirst({ where: { id, is_deleted: false } })
-  if (!existing) throw createError({ statusCode: 404, statusMessage: 'Note not found' })
+  if (!existing) throw new NoteNotFound(id)
 
   // Only write the keys actually present in the body — omission means
   // "leave unchanged".
@@ -58,7 +58,7 @@ export async function deleteNote(event: H3Event, id: string) {
   const db = getPrisma()
 
   const existing = await db.note.findFirst({ where: { id, is_deleted: false } })
-  if (!existing) throw createError({ statusCode: 404, statusMessage: 'Note not found' })
+  if (!existing) throw new NoteNotFound(id)
 
   await db.note.update({ where: { id }, data: { is_deleted: true } })
   return { deleted: id }
