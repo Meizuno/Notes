@@ -8,47 +8,17 @@
 // pagination flags before cards begin rendering. Items follow in
 // display order (newest updated first). Pagination params: limit,
 // offset, search, folder.
-
-const DEFAULT_LIMIT = 20
+//
+// The data fetch + visibility filter live in the listNotes service; the
+// snippet shaping and per-item pacing below are transport concerns and
+// stay here.
+import { listNotesQuerySchema } from '#shared/schemas/note'
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const search = query.search ? String(query.search) : ''
-  // Optional folder filter — passes a slash-separated prefix and the
-  // endpoint returns every note inside that folder (and its subfolders).
-  const folder = query.folder ? String(query.folder).trim() : ''
-  const limit = Math.min(Number(query.limit) || DEFAULT_LIMIT, 100)
-  const offset = Number(query.offset) || 0
+  const query = await getValidatedQuery(event, listNotesQuerySchema.parse)
+  const { items, total } = await listNotes(event, query)
 
-  const db = getPrisma()
-  const where = {
-    ...noteVisibilityWhere(event),
-    ...(search ? {
-      OR: [
-        { title:   { contains: search, mode: 'insensitive' as const } },
-        { content: { contains: search, mode: 'insensitive' as const } }
-      ]
-    } : {}),
-    ...(folder ? { folder: { startsWith: folder } } : {})
-  }
-
-  const [items, total] = await Promise.all([
-    db.note.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        folder: true,
-        content: true,
-        updated_at: true
-      },
-      orderBy: { updated_at: 'desc' },
-      skip: offset,
-      take: limit
-    }),
-    db.note.count({ where })
-  ])
-
+  const search = query.search
   const makeSnippet = (content: string) => {
     if (!content) return null
     if (search) {
@@ -67,7 +37,7 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'x-accel-buffering', 'no')
 
   const enc = new TextEncoder()
-  const meta = { total, hasMore: offset + items.length < total }
+  const meta = { total, hasMore: query.offset + items.length < total }
 
   // Deliberate per-item pacing so the client sees a visible cascade
   // rather than 20 cards landing in the same frame.

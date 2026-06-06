@@ -70,6 +70,13 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    // Auto-import the service layer (server/utils is auto-imported by
+    // default; services are not). Lets handlers call createNote/etc.
+    // unqualified, matching the util auto-import style.
+    imports: {
+      dirs: ['server/services']
+    },
+
     routeRules: {
       // Static at build time → `.output/public/login/index.html`. Auth
       // middleware 302s logged-in users away from /login before the

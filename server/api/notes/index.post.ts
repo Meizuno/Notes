@@ -1,29 +1,6 @@
-const VISIBILITY_VALUES = new Set(['PRIVATE', 'PROTECTED', 'PUBLIC'] as const)
-type Visibility = 'PRIVATE' | 'PROTECTED' | 'PUBLIC'
+import { createNoteSchema } from '#shared/schemas/note'
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuthUser(event)
-  const { title, content, folder, description, visibility } = await readBody<{
-    title: string
-    content?: string
-    folder?: string | null
-    description?: string | null
-    visibility?: Visibility
-  }>(event)
-  if (!title?.trim()) throw createError({ statusCode: 400, statusMessage: 'Title is required' })
-  if (visibility && !VISIBILITY_VALUES.has(visibility)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid visibility' })
-  }
-
-  const db = getPrisma()
-  return db.note.create({
-    data: {
-      user_id: user.id,
-      title: title.trim(),
-      content: content ?? '',
-      folder: folder?.trim() || null,
-      description: description?.trim() || null,
-      visibility: visibility ?? 'PROTECTED'
-    }
-  })
+  const input = await readValidatedBody(event, createNoteSchema.parse)
+  return createNote(event, input)
 })
