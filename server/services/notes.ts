@@ -25,7 +25,10 @@ export async function createNote(event: H3Event, input: CreateNoteInput) {
       // Schema already trims; collapse empty/absent to null here.
       folder: input.folder || null,
       description: input.description || null,
-      visibility: input.visibility
+      visibility: input.visibility,
+      // PUBLIC notes are shared by definition; force the flag so it can't
+      // disagree with the tier regardless of what the client sent.
+      is_shared: input.visibility === 'PUBLIC' ? true : input.is_shared
     },
     // Same NoteRow projection as update/get — don't echo user_id/is_deleted.
     select: NOTE_SELECT

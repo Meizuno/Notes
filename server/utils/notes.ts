@@ -24,6 +24,7 @@ export type NoteRow = {
   description: string | null
   content: string
   visibility: NoteVisibility
+  is_shared: boolean
   created_at: Date
   updated_at: Date
 }
@@ -55,6 +56,7 @@ export const NOTE_SELECT = {
   description: true,
   content: true,
   visibility: true,
+  is_shared: true,
   created_at: true,
   updated_at: true
 } as const
@@ -73,6 +75,26 @@ export function noteVisibilityWhere(viewerId: string | null): Prisma.NoteWhereIn
       { visibility: { not: NoteVisibility.PRIVATE } },
       { visibility: NoteVisibility.PRIVATE, user_id: viewerId }
     ]
+  }
+}
+
+// By-id read filter for the "share by link" feature. Same as the tier
+// scope above, plus an escape hatch: any `is_shared` note is readable by
+// anyone holding the URL, regardless of tier (incl. anonymous). This is
+// ONLY for single-note reads (the note page / stream) — listing keeps
+// using noteVisibilityWhere so shared notes don't leak into other users'
+// tree / graph / search. Mutations also stay on noteVisibilityWhere, so a
+// stranger with the link can read but not edit or delete.
+export function noteByIdReadableWhere(viewerId: string | null): Prisma.NoteWhereInput {
+  const tier: Prisma.NoteWhereInput[] = viewerId
+    ? [
+        { visibility: { not: NoteVisibility.PRIVATE } },
+        { visibility: NoteVisibility.PRIVATE, user_id: viewerId }
+      ]
+    : [{ visibility: NoteVisibility.PUBLIC }]
+  return {
+    is_deleted: false,
+    OR: [...tier, { is_shared: true }]
   }
 }
 
@@ -102,13 +124,22 @@ export function buildNoteUpdateData(input: {
   folder?: string | null
   description?: string | null
   visibility?: NoteVisibility
+  is_shared?: boolean
 }): Prisma.NoteUpdateInput {
+  // PUBLIC is shared by definition, so a visibility→PUBLIC change forces
+  // is_shared true regardless of (or in the absence of) an is_shared key;
+  // otherwise the flag is written only when explicitly present.
+  const sharedOverride
+    = input.visibility === NoteVisibility.PUBLIC ? true
+      : input.is_shared !== undefined ? input.is_shared
+        : undefined
   return {
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.content !== undefined ? { content: input.content } : {}),
     ...(input.folder !== undefined ? { folder: input.folder?.trim() || null } : {}),
     ...(input.description !== undefined ? { description: input.description?.trim() || null } : {}),
-    ...(input.visibility !== undefined ? { visibility: input.visibility } : {})
+    ...(input.visibility !== undefined ? { visibility: input.visibility } : {}),
+    ...(sharedOverride !== undefined ? { is_shared: sharedOverride } : {})
   }
 }
 
@@ -150,10 +181,18 @@ export async function listNotesScoped(
 }
 
 // Single-note read within the viewer's visibility scope. Returns null when
-// the note is missing, deleted, or another user's PRIVATE note.
-export function loadNoteScoped(viewerId: string | null, id: string): Promise<NoteRow | null> {
+// the note is missing, deleted, or another user's PRIVATE note. Pass
+// `{ includeShared: true }` (the web note page / stream) to also surface
+// is_shared notes reachable by link; MCP / prompts omit it to keep their
+// tier-only scope.
+export function loadNoteScoped(
+  viewerId: string | null,
+  id: string,
+  opts: { includeShared?: boolean } = {}
+): Promise<NoteRow | null> {
+  const scope = opts.includeShared ? noteByIdReadableWhere(viewerId) : noteVisibilityWhere(viewerId)
   return getPrisma().note.findFirst({
-    where: { id, ...noteVisibilityWhere(viewerId) },
+    where: { id, ...scope },
     select: NOTE_SELECT
   })
 }

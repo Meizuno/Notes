@@ -41,6 +41,14 @@ model Note {
   // Write access (PUT/POST/DELETE) always requires auth; this enum
   // gates *read* access only.
   visibility NoteVisibility @default(PROTECTED)
+  // "Anyone with the link can read" — orthogonal to `visibility`. When
+  // true, the note is readable by its URL (incl. anonymous) even if its
+  // tier is PROTECTED/PRIVATE, but it still does NOT appear in other
+  // users' tree / graph / search (listing keeps using the tier filter).
+  // Write access is unaffected — only the creator / shared-workspace can
+  // mutate. PUBLIC notes are shared by definition, so this is forced true
+  // for them (see the service + the backfill migration).
+  is_shared  Boolean  @default(false)
   is_deleted Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
