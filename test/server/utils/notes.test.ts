@@ -14,6 +14,7 @@ vi.mock('../../../server/utils/db', () => ({ getPrisma: () => ({ note }) }))
 
 const {
   noteVisibilityWhere,
+  noteByIdReadableWhere,
   makeNoteSnippet,
   buildNoteUpdateData,
   listNotesScoped,
@@ -53,6 +54,29 @@ describe('noteVisibilityWhere', () => {
   })
 })
 
+describe('noteByIdReadableWhere', () => {
+  it('lets anonymous read PUBLIC or any is_shared note', () => {
+    expect(noteByIdReadableWhere(null)).toEqual({
+      is_deleted: false,
+      OR: [
+        { visibility: NoteVisibility.PUBLIC },
+        { is_shared: true }
+      ]
+    })
+  })
+
+  it('adds the is_shared link escape to the viewer tier scope', () => {
+    expect(noteByIdReadableWhere('user-1')).toEqual({
+      is_deleted: false,
+      OR: [
+        { visibility: { not: NoteVisibility.PRIVATE } },
+        { visibility: NoteVisibility.PRIVATE, user_id: 'user-1' },
+        { is_shared: true }
+      ]
+    })
+  })
+})
+
 describe('makeNoteSnippet', () => {
   it('returns null for empty content', () => {
     expect(makeNoteSnippet('')).toBeNull()
@@ -73,6 +97,22 @@ describe('buildNoteUpdateData', () => {
       description: null
     })
     expect(buildNoteUpdateData({})).toEqual({})
+  })
+
+  it('writes is_shared when explicitly present', () => {
+    expect(buildNoteUpdateData({ is_shared: true })).toEqual({ is_shared: true })
+    expect(buildNoteUpdateData({ is_shared: false })).toEqual({ is_shared: false })
+  })
+
+  it('forces is_shared true on a visibility→PUBLIC change, even against a false flag', () => {
+    expect(buildNoteUpdateData({ visibility: NoteVisibility.PUBLIC })).toEqual({
+      visibility: NoteVisibility.PUBLIC,
+      is_shared: true
+    })
+    expect(buildNoteUpdateData({ visibility: NoteVisibility.PUBLIC, is_shared: false })).toEqual({
+      visibility: NoteVisibility.PUBLIC,
+      is_shared: true
+    })
   })
 })
 
@@ -103,6 +143,12 @@ describe('loadNoteScoped', () => {
     note.findFirst.mockResolvedValue({ id: 'n1' })
     await loadNoteScoped('u1', 'n1')
     expect(note.findFirst.mock.calls[0][0].where).toEqual({ id: 'n1', ...noteVisibilityWhere('u1') })
+  })
+
+  it('widens to the by-link readable scope with { includeShared: true }', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
+    await loadNoteScoped('u1', 'n1', { includeShared: true })
+    expect(note.findFirst.mock.calls[0][0].where).toEqual({ id: 'n1', ...noteByIdReadableWhere('u1') })
   })
 })
 

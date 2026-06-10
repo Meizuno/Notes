@@ -12,7 +12,8 @@ describe('createNoteSchema', () => {
     expect(parsed).toMatchObject({
       title: 'Hello',
       content: '',
-      visibility: 'PROTECTED'
+      visibility: 'PROTECTED',
+      is_shared: false
     })
   })
 
@@ -40,6 +41,11 @@ describe('updateNoteSchema', () => {
 
   it('allows folder to be set to null explicitly', () => {
     expect(updateNoteSchema.parse({ folder: null })).toEqual({ folder: null })
+  })
+
+  it('accepts the is_shared toggle', () => {
+    expect(updateNoteSchema.parse({ is_shared: true })).toEqual({ is_shared: true })
+    expect(updateNoteSchema.safeParse({ is_shared: 'yes' }).success).toBe(false)
   })
 })
 

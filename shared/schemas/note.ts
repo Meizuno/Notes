@@ -25,7 +25,10 @@ export const createNoteSchema = z.object({
   content: z.string().default(''),
   folder: optionalText(500),
   description: optionalText(500),
-  visibility: visibilitySchema.default('PROTECTED')
+  visibility: visibilitySchema.default('PROTECTED'),
+  // "Anyone with the link can read" flag (see Note.is_shared). The
+  // service forces this true for PUBLIC notes regardless of what's sent.
+  is_shared: z.boolean().default(false)
 })
 export type CreateNoteInput = z.infer<typeof createNoteSchema>
 
@@ -36,7 +39,8 @@ export const updateNoteSchema = z.object({
   content: z.string().optional(),
   folder: optionalText(500),
   description: optionalText(500),
-  visibility: visibilitySchema.optional()
+  visibility: visibilitySchema.optional(),
+  is_shared: z.boolean().optional()
 })
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>
 
@@ -60,5 +64,6 @@ export type Note = {
   description: string | null
   content: string
   visibility: Visibility
+  is_shared: boolean
   updated_at: string
 }

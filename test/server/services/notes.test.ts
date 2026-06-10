@@ -29,14 +29,16 @@ beforeEach(() => {
 })
 
 describe('createNote', () => {
-  it('stamps the creator and collapses empty folder/description to null', async () => {
+  it('stamps the creator, collapses empty folder/description, and forces is_shared for PUBLIC', async () => {
     note.create.mockResolvedValue({ id: 'n1' })
     await createNote(eventWith({ id: 'u1' }), {
       title: 'Hello',
       content: 'body',
       folder: '',
       description: null,
-      visibility: 'PUBLIC'
+      visibility: 'PUBLIC',
+      // even though the client sent false, PUBLIC forces is_shared true
+      is_shared: false
     })
     // (createNote also passes select: NOTE_SELECT to project the response;
     // assert on the data payload here.)
@@ -46,13 +48,30 @@ describe('createNote', () => {
       content: 'body',
       folder: null,
       description: null,
-      visibility: 'PUBLIC'
+      visibility: 'PUBLIC',
+      is_shared: true
+    })
+  })
+
+  it('passes is_shared through for a non-public note', async () => {
+    note.create.mockResolvedValue({ id: 'n1' })
+    await createNote(eventWith({ id: 'u1' }), {
+      title: 'Shared protected',
+      content: '',
+      folder: null,
+      description: null,
+      visibility: 'PROTECTED',
+      is_shared: true
+    })
+    expect(note.create.mock.calls[0][0].data).toMatchObject({
+      visibility: 'PROTECTED',
+      is_shared: true
     })
   })
 
   it('throws Unauthorized when the caller is anonymous', async () => {
     await expect(
-      createNote(eventWith(), { title: 'x', content: '', folder: null, description: null, visibility: 'PROTECTED' })
+      createNote(eventWith(), { title: 'x', content: '', folder: null, description: null, visibility: 'PROTECTED', is_shared: false })
     ).rejects.toBeInstanceOf(Unauthorized)
     expect(note.create).not.toHaveBeenCalled()
   })

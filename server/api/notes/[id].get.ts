@@ -5,8 +5,9 @@ export default defineEventHandler(async (event) => {
   // No auth gate here — anon users (viewerId null) are filtered to
   // public-only by loadNoteScoped. A private note simply returns 404 to
   // anon, matching the response for non-existent ids (avoids leaking
-  // existence).
-  const note = await loadNoteScoped(viewerId(event), id)
+  // existence). includeShared opens the by-link escape: an is_shared note
+  // is readable by anyone holding the URL, regardless of tier.
+  const note = await loadNoteScoped(viewerId(event), id, { includeShared: true })
   if (!note) throw new NoteNotFound(id)
   return note
 })

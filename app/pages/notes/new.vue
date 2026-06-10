@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const { createNote } = useNotesApi()
-const { title, folder, description, content, visibility, toCreateInput } = useNoteForm()
+const { title, folder, description, content, visibility, isShared, toCreateInput } = useNoteForm()
 
 // Pre-fill from query params:
 //   ?title=Foo  — entry point for "create note with this title".
@@ -30,6 +30,7 @@ async function save() {
       v-model:description="description"
       v-model:content="content"
       v-model:visibility="visibility"
+      v-model:shared="isShared"
       :saving="saving"
       submit-label="Save note"
       @submit="save"

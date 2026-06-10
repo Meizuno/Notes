@@ -5,7 +5,7 @@
 // The note is NOT fetched for viewing — that's <NoteStream>'s job. We only
 // fetch on startEdit, to populate the form.
 export function useNoteEditor(id: string) {
-  const { title, folder, description, content, visibility, populate, toUpdateInput } = useNoteForm()
+  const { title, folder, description, content, visibility, isShared, populate, toUpdateInput } = useNoteForm()
   const notesApi = useNotesApi()
   const { confirm } = useConfirm()
 
@@ -56,6 +56,7 @@ export function useNoteEditor(id: string) {
     description,
     content,
     visibility,
+    isShared,
     saving,
     loadingEdit,
     version,

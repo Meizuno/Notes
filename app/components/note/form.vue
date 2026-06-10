@@ -18,6 +18,12 @@ const folder = defineModel<string>('folder', { default: '' })
 const description = defineModel<string>('description', { default: '' })
 const content = defineModel<string>('content', { default: '' })
 const visibility = defineModel<Visibility>('visibility', { default: 'PROTECTED' })
+const shared = defineModel<boolean>('shared', { default: false })
+
+// PUBLIC notes are shareable by definition — force the switch on (and
+// the template disables it) so its state can't contradict the tier. The
+// server enforces the same invariant; this just keeps the UI honest.
+watch(visibility, (v) => { if (v === 'PUBLIC') shared.value = true })
 
 // Single source of truth for the visibility dropdown's icon + label
 // per tier; both the trigger button and the menu items pull from it.
@@ -136,6 +142,17 @@ function onSubmit() {
           trailing-icon="i-lucide-chevron-down"
         />
       </UDropdownMenu>
+      <!-- Share-by-link toggle. Orthogonal to the tier, except PUBLIC
+           forces it on (disabled) since a public note is shareable by
+           definition. When on, a PROTECTED/PRIVATE note becomes readable
+           by anyone holding its URL (but stays out of other users'
+           tree / graph / search). -->
+      <USwitch
+        v-model="shared"
+        size="sm"
+        label="Shared link"
+        :disabled="visibility === 'PUBLIC'"
+      />
       <div class="flex-1" />
       <div class="flex gap-2">
         <UButton

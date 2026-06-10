@@ -1,5 +1,5 @@
 import { getPrisma } from '../../../utils/db'
-import { noteVisibilityWhere } from '../../../utils/notes'
+import { noteByIdReadableWhere } from '../../../utils/notes'
 
 // Streaming endpoint for note metadata + markdown content. Sends a
 // single metadata record first so the client can paint the title,
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing id' })
 
   const note = await getPrisma().note.findFirst({
-    where: { id, ...noteVisibilityWhere(viewerId(event)) },
+    where: { id, ...noteByIdReadableWhere(viewerId(event)) },
     select: {
       id: true,
       title: true,
