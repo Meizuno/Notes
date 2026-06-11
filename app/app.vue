@@ -28,6 +28,7 @@ if (route.path !== '/login') {
       <main class="flex-1 min-h-0 overflow-auto">
         <NuxtPage />
       </main>
+      <AppFooter />
     </div>
     <NuxtPage v-else />
     <ConfirmDialog />
