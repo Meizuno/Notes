@@ -76,7 +76,62 @@ function radius(n: Node) {
   // a glance. Notes get a slightly larger constant disc than folders'
   // base, with a degree bonus when they happen to be referenced.
   if (n.type === 'folder') return 9 + Math.sqrt(n.links) * 2.2
-  return 7 + Math.sqrt(n.links) * 1.4
+  return 9 + Math.sqrt(n.links) * 1.7
+}
+
+// Label level-of-detail: opacity combines node size with the zoom level.
+// Zoomed out, only the largest (most-connected) nodes keep visible labels —
+// the long tail of small leaf notes drops to ~0 so a dense graph isn't a
+// wall of overlapping text. As you zoom in, every label fades up to full.
+// Driven via the `--label-opacity` custom property so the hover-fade rule
+// (.node-faded .label) still wins.
+const LABEL_ZOOM_MIN = 0.8   // at/below this k, only the big nodes are labelled
+const LABEL_ZOOM_MAX = 2.2   // at/above this k, every label is fully shown
+const LABEL_MID_BUMP = 0.6   // lifts the mid-zoom opacity (0 at both ends, +BUMP/4 at the centre)
+const LABEL_SIZE_FALLOFF = 1.4   // exponent on size prominence; lower = brighter labels overall
+
+// On a phone the overview is too cramped to carry the size-based labels,
+// and the more notes there are the worse it gets. So on a small screen we
+// fade out the size-driven base as the graph grows — past LABEL_DENSE_MAX
+// items the labels default to opacity 0 and become purely zoom-driven
+// (hidden until you zoom in). Desktop keeps the size base (weight 1).
+// `width` is the measured container width, a good proxy for the viewport.
+const SMALL_SCREEN_WIDTH = 640
+const LABEL_DENSE_MIN = 20   // small screen: start suppressing the size base here
+const LABEL_DENSE_MAX = 45   // small screen: fully suppressed (labels default to 0)
+const labelSizeWeight = computed(() => {
+  if (width.value === 0 || width.value >= SMALL_SCREEN_WIDTH) return 1
+  const t = (nodes.value.length - LABEL_DENSE_MIN) / (LABEL_DENSE_MAX - LABEL_DENSE_MIN)
+  return 1 - Math.min(1, Math.max(0, t))
+})
+
+// How much to de-clutter at all, from the item count. With only a handful of
+// notes there's nothing to crowd, so every label stays at full opacity
+// (declutter 0); as the vault grows the size/zoom fade-out blends in
+// (declutter → 1). This is what makes a roomy graph with few items show all
+// labels at 100%.
+const LABEL_DECLUTTER_MIN = 15   // at/below this many nodes, all labels are full opacity
+const LABEL_DECLUTTER_MAX = 35   // at/above this, the size/zoom de-clutter fully applies
+const labelDeclutter = computed(() => {
+  const t = (nodes.value.length - LABEL_DECLUTTER_MIN) / (LABEL_DECLUTTER_MAX - LABEL_DECLUTTER_MIN)
+  return Math.min(1, Math.max(0, t))
+})
+
+function labelOpacity(n: Node): number {
+  const zRaw = Math.min(1, Math.max(0, (transform.k - LABEL_ZOOM_MIN) / (LABEL_ZOOM_MAX - LABEL_ZOOM_MIN)))
+  // Concave bump: same 0 and 1 endpoints, but the middle of the zoom range
+  // gets a little extra opacity so labels read sooner through the fade-in.
+  const z = zRaw + LABEL_MID_BUMP * zRaw * (1 - zRaw)
+  const p = Math.min(1, Math.max(0, (radius(n) - 9) / 13))
+  // Big nodes (p→1) stay opaque at any zoom; small nodes (p→0) sit at ~0
+  // when zoomed out and fade in with z. The size falloff (>1) keeps the tail
+  // of 1-link notes near 0 on the overview while a softer exponent brightens
+  // the prominent labels. labelSizeWeight pulls the whole size base toward 0
+  // on a dense small screen, leaving opacity purely zoom-driven there.
+  const base = z + (1 - z) * Math.pow(p, LABEL_SIZE_FALLOFF) * labelSizeWeight.value
+  // Blend toward full opacity when the vault is small — declutter 0 → 1,
+  // declutter 1 → the size/zoom base above.
+  return 1 - labelDeclutter.value * (1 - base)
 }
 
 // Truncate long titles so labels don't overlap with neighbours.
@@ -451,7 +506,7 @@ onBeforeUnmount(() => {
             text-anchor="middle"
             class="label"
             :class="{ 'label-folder': n.type === 'folder' }"
-            :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px` }"
+            :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px`, '--label-opacity': labelOpacity(n) }"
           >{{ displayTitle(n.title) }}</text>
         </g>
       </g>
@@ -509,6 +564,10 @@ onBeforeUnmount(() => {
   stroke: var(--ui-bg);
   stroke-width: 3;
   stroke-linejoin: round;
+  /* Per-node base opacity (set inline from labelOpacity). The
+     .node-faded rule below is more specific, so hover-dimming still
+     wins over this. */
+  opacity: var(--label-opacity, 1);
   transition: opacity 200ms ease-out;
 }
 .label-folder {
