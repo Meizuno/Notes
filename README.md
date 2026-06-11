@@ -10,6 +10,15 @@ SSR-rendered for search engines. The visibility filter and the scoped note
 CRUD live in one place (`server/utils/notes.ts`), shared by the HTTP API, the
 MCP tools, and the prompt endpoints.
 
+## Inspiration
+
+The note-taking experience is inspired by **[Obsidian](https://obsidian.md)** —
+a Markdown vault grouped into folders, with a force-directed graph linking notes
+to their folders. The difference is the deployment model: where Obsidian is a
+local-first, single-user desktop app, this is a **web, self-hosted, multi-user**
+take — a shared vault with per-note visibility tiers and link sharing, rendered
+server-side so public notes are crawlable.
+
 ## Stack
 
 - **[Nuxt 4](https://nuxt.com)** (Vue 3, `<script setup>`) + **Nitro** server
