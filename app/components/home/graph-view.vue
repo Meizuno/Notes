@@ -174,6 +174,12 @@ const PREWARM_TICKS = 80
 function startSim() {
   if (simulation) simulation.stop()
   if (!nodes.value.length) return
+  // Bail while the container is hidden / zero-size — the graph is
+  // CSS-hidden on small screens, so it mounts with no size. measure()
+  // starts the sim once the container has a real size (e.g. when the
+  // viewport crosses into the desktop layout), so a hidden graph never
+  // wastes a simulation.
+  if (width.value === 0 || height.value === 0) return
 
   const { sx, sy } = centeringStrengths()
 
@@ -388,12 +394,19 @@ function measure() {
       .alpha(0.3)
       .restart()
   }
+  else if (width.value > 0 && height.value > 0 && nodes.value.length) {
+    // First time we have a real size (initial desktop paint, or the
+    // viewport just grew into the desktop layout and un-hid the graph) —
+    // kick the simulation off now.
+    startSim()
+  }
 }
 
 onMounted(() => {
+  // measure() starts the sim once the container has a real size, so a
+  // graph that's CSS-hidden on small screens does no work until shown.
   measure()
   window.addEventListener('resize', measure)
-  if (nodes.value.length) startSim()
 })
 
 onBeforeUnmount(() => {

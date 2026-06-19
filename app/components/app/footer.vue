@@ -9,7 +9,7 @@
 
 <template>
   <footer class="bg-default dark:bg-[#3D4452] border-t border-default shrink-0">
-    <div class="max-w-3xl mx-auto px-3 py-1.5 flex items-center justify-between gap-3 text-xs text-muted">
+    <div class="px-4 py-1.5 flex items-center justify-between gap-3 text-xs text-muted">
       <!-- Left block: inspiration credit -->
       <span class="inline-flex items-center gap-1">
         Inspired by
