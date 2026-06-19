@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Full-page tree of the vault, rendered with Nuxt UI's <UTree>.
-// Folders start collapsed (UTree's default). Expand state persists
-// across SPA navigation via a useState key and resets on full reload.
+// Folder tree of the vault, rendered with Nuxt UI's <UTree>.
+// Folders start collapsed; open them individually, and a "Collapse all"
+// action (shown once anything is open) tidies them back — there is no
+// bulk expand. Expand state persists across SPA navigation via a useState
+// key and resets to collapsed on a full reload.
 
 type FlatNote = { id: string, title: string, folder: string | null, created_at: string }
 
@@ -17,7 +19,9 @@ type TreeItem = {
   onSelect?: (e: Event) => void
 }
 
-const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree')
+// Same `key` as the home page's prefetch so the two tree-view instances
+// (sidebar + small) and the prefetch all share one request, not three.
+const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree', { key: 'sidebar-tree' })
 const route = useRoute()
 const router = useRouter()
 
@@ -27,35 +31,15 @@ const activeNoteId = computed(() => {
   return m && m[1] ? m[1] : null
 })
 
-const allFolderPaths = computed(() => {
-  const paths = new Set<string>()
-  for (const n of notes.value ?? []) {
-    if (!n.folder) continue
-    let acc = ''
-    for (const part of n.folder.split('/').filter(Boolean)) {
-      acc = acc ? `${acc}/${part}` : part
-      paths.add(acc)
-    }
-  }
-  return paths
-})
-
-// UTree v-model:expanded wants an array of keys. Survives SPA nav;
-// the `initialized` flag means "Collapse all" + leave + come back
-// won't silently re-expand, but a full reload starts fully open again.
+// UTree v-model:expanded wants an array of keys. Starts empty (all
+// collapsed); persists across SPA nav via this key and resets to
+// collapsed on a full reload.
 const expanded = useState<string[]>('home-tree-expanded', () => [])
-const initialized = useState('home-tree-initialized', () => false)
-onMounted(() => {
-  if (!initialized.value && allFolderPaths.value.size > 0) {
-    expanded.value = [...allFolderPaths.value]
-    initialized.value = true
-  }
-})
 
-function toggleExpandAll() {
-  expanded.value = expanded.value.length === 0
-    ? [...allFolderPaths.value]
-    : []
+// Collapse-only: folders open individually, and this is the single bulk
+// action — there is no "expand all".
+function collapseAll() {
+  expanded.value = []
 }
 
 const items = computed<TreeItem[]>(() => {
@@ -147,14 +131,14 @@ watchEffect(() => {
           {{ notes?.length ?? 0 }} note{{ (notes?.length ?? 0) === 1 ? '' : 's' }}
         </span>
         <UButton
-          v-if="allFolderPaths.size > 0"
-          :icon="expanded.length === 0 ? 'i-lucide-chevrons-up-down' : 'i-lucide-chevrons-down-up'"
+          v-if="expanded.length > 0"
+          icon="i-lucide-chevrons-down-up"
           variant="ghost"
           color="neutral"
           size="xs"
           class="ml-auto"
-          :label="expanded.length === 0 ? 'Expand all' : 'Collapse all'"
-          @click="toggleExpandAll"
+          label="Collapse all"
+          @click="collapseAll"
         />
       </div>
 

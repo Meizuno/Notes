@@ -1,15 +1,15 @@
 <script setup lang="ts">
-// Home page = the vault overview. Two presentations of the same data:
-//   - Graph: force-directed view of notes clustered around their
-//            folder anchors
-//   - Tree:  hierarchical folder layout, full-page version of the
-//            sidebar tree
-// Persisted as `?view=graph|tree` in the URL — shareable, survives
-// reloads, plays well with browser back/forward. Defaults to graph
-// when the param is missing or invalid. The toggle itself lives in
-// the header (see app/components/app/header.vue) so it stays
-// consistent with the rest of the chrome; this page only reads the
-// query to pick which view to mount.
+// Home page = the vault overview. Responsive layout, done purely with CSS
+// (Tailwind `lg:` utilities) so the right layout is chosen on the first
+// paint — no matchMedia, no post-hydration swap/flash on desktop:
+//   - Large (≥ lg): graph fills the main area with the tree pinned as a
+//     left sidebar — both visible, Obsidian-style.
+//   - Small: tree only. The force-graph wants pan/zoom/space that doesn't
+//     suit a phone; the tree is a tappable, crawler-friendly folder list.
+//
+// CSS hides, it can't unmount, so the graph stays mounted on small screens
+// — but it sits at zero size there and its simulation bails until shown
+// (see HomeGraphView's startSim/measure guard), so it costs nothing.
 
 const config = useRuntimeConfig()
 const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
@@ -26,25 +26,24 @@ if (siteUrl) {
   useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/` }] })
 }
 
-const route = useRoute()
-const view = computed(() => route.query.view === 'tree' ? 'tree' : 'graph')
-
-// Prefetch the note tree alongside the graph so toggling to the
-// Tree view is instant. The tree component reuses this payload via
-// the shared `sidebar-tree` cache key — no second round-trip when
-// it mounts.
+// Prefetch the note tree so the sidebar / tree view paints without a
+// second round-trip when it mounts.
 await useFetch('/api/notes/tree', { key: 'sidebar-tree' })
 </script>
 
 <template>
-  <!-- The outer flex column gives the graph/tree slot something to
-       claim full height against — its inner `flex-1 min-h-0` is a
-       no-op without a flex parent here, because `<main>` provides
-       scroll, not a flex column. -->
-  <div class="flex flex-col h-full">
-    <div class="flex-1 min-h-0">
-      <HomeGraphView v-if="view === 'graph'" />
-      <HomeTreeView v-else />
+  <div class="flex h-full">
+    <!-- ≥ lg: tree pinned as a left sidebar + graph filling the rest. -->
+    <aside class="hidden lg:block w-80 shrink-0 border-r border-default overflow-hidden">
+      <HomeTreeView />
+    </aside>
+    <div class="hidden lg:block flex-1 min-w-0">
+      <HomeGraphView />
+    </div>
+
+    <!-- < lg: tree only. -->
+    <div class="lg:hidden flex-1 min-w-0">
+      <HomeTreeView />
     </div>
   </div>
 </template>

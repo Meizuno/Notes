@@ -1,38 +1,17 @@
 <script setup lang="ts">
 // Top header strip — visible at every breakpoint. Brand on the left
 // links to the home view; the right side carries the global "new
-// note" action and the user dropdown for signed-in viewers, and the
-// home-view toggle (graph ↔ tree) when the home page is showing.
+// note" action and the user dropdown for signed-in viewers.
 // Anonymous viewers see no "Log in" affordance — the route is
 // reachable directly at /login by anyone who knows it.
 
-type HomeView = 'graph' | 'tree'
-
 const { user, loggedIn, logout } = useAuth()
-const route = useRoute()
-const router = useRouter()
 
-const isHome = computed(() => route.path === '/')
-
-// The right cluster carries the home-view toggle (any viewer, on
-// /) and the signed-in actions. When both gates are off — anonymous
-// viewer on a non-home page — the cluster collapses and the brand
+// The right cluster carries only the signed-in actions now (the home-view
+// toggle was removed — large screens show graph + tree together, small
+// screens are tree-only). Empty for anonymous viewers, so the brand
 // centres on its own.
-const hasRightItems = computed(() => isHome.value || loggedIn.value)
-
-const homeView = computed<HomeView>({
-  get() {
-    return route.query.view === 'tree' ? 'tree' : 'graph'
-  },
-  set(val: HomeView) {
-    router.replace({ query: { ...route.query, view: val } })
-  }
-})
-
-const homeViewItems = [
-  { label: 'Graph', value: 'graph', icon: 'i-lucide-network' },
-  { label: 'Tree', value: 'tree', icon: 'i-lucide-folder-tree' }
-]
+const hasRightItems = computed(() => loggedIn.value)
 
 const userMenuItems = computed(() => [
   [{
@@ -51,17 +30,13 @@ const userMenuItems = computed(() => [
 
 <template>
   <header class="bg-default dark:bg-[#3D4452] border-b border-default shrink-0">
-    <!-- Inner container caps the row at the same width as the page
-         content below (notes pages use `max-w-3xl`). On wide
-         viewports the brand stays aligned with the article column
-         instead of being shoved against the left edge of the screen. -->
-    <!-- justify-between when the right cluster is non-empty (brand
-         hugs the left, cluster hugs the right). justify-center when
-         the cluster is empty so the brand sits dead-centre on its
-         own. The discrete swap avoids the proportional drift a
-         single 3-zone layout would give. -->
+    <!-- Full-width row. justify-between when the right cluster is
+         non-empty (brand hugs the left, cluster hugs the right);
+         justify-center when the cluster is empty so the brand sits
+         dead-centre on its own. The discrete swap avoids the
+         proportional drift a single 3-zone layout would give. -->
     <div
-      class="flex items-center gap-2 px-3 py-1.5 max-w-3xl mx-auto"
+      class="flex items-center gap-2 px-4 py-1.5"
       :class="hasRightItems ? 'justify-between' : 'justify-center'"
     >
       <NuxtLink
@@ -73,15 +48,6 @@ const userMenuItems = computed(() => [
       </NuxtLink>
 
       <div v-if="hasRightItems" class="flex items-center gap-2">
-        <UTabs
-          v-if="isHome"
-          v-model="homeView"
-          :items="homeViewItems"
-          :content="false"
-          size="sm"
-          variant="pill"
-        />
-
         <UButton
           v-if="loggedIn"
           to="/notes/new"
