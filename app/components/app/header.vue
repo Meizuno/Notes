@@ -30,15 +30,12 @@ const userMenuItems = computed(() => [
 
 <template>
   <header class="bg-default dark:bg-[#3D4452] border-b border-default shrink-0">
-    <!-- Full-width row. justify-between when the right cluster is
-         non-empty (brand hugs the left, cluster hugs the right);
-         justify-center when the cluster is empty so the brand sits
-         dead-centre on its own. The discrete swap avoids the
-         proportional drift a single 3-zone layout would give. -->
-    <div
-      class="flex items-center gap-2 px-4 py-1.5"
-      :class="hasRightItems ? 'justify-between' : 'justify-center'"
-    >
+    <!-- Full-width row: brand always hugs the left; the right cluster
+         (signed-in actions) hugs the right when present, or the brand
+         simply sits alone on the left for anonymous viewers. `min-h`
+         keeps the bar the same height whether or not the (taller)
+         action buttons are present. -->
+    <div class="flex items-center justify-between gap-2 px-4 py-1.5 min-h-11">
       <NuxtLink
         to="/"
         class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
