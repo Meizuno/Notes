@@ -5,7 +5,26 @@ useHead({
   htmlAttrs: { lang: 'en' }
 })
 
-useSeoMeta({ title: 'Notes' })
+// Site-wide SEO defaults. The og:image is set here (once) so every page —
+// home and notes — has a social-share thumbnail without repeating it;
+// pages still override title/description/og:type per route. og:image needs
+// an absolute URL, so it's gated on the configured site URL (prod). The
+// image is public/og-image.png — a screenshot of the vault graph.
+const config = useRuntimeConfig()
+const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
+useSeoMeta({
+  title: 'Notes',
+  ...(siteUrl
+    ? {
+        ogImage: `${siteUrl}/og-image.png`,
+        ogImageType: 'image/png',
+        ogImageWidth: 1277,
+        ogImageHeight: 1157,
+        ogImageAlt: 'The Notes vault, visualized as a force-directed graph',
+        twitterCard: 'summary_large_image' as const
+      }
+    : {})
+})
 
 const route = useRoute()
 const showShell = computed(() => route.path !== '/login')
