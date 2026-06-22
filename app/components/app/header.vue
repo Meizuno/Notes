@@ -7,10 +7,12 @@
 
 const { user, loggedIn, logout } = useAuth()
 
-// The right cluster carries only the signed-in actions now (the home-view
-// toggle was removed — large screens show graph + tree together, small
-// screens are tree-only). Empty for anonymous viewers, so the brand
-// centres on its own.
+// Toggles the navigation sidebar's off-canvas drawer on small screens
+// (the sidebar is always visible on large, so the button is lg:hidden).
+const { toggle: toggleSidebar } = useSidebar()
+
+// The right cluster carries the signed-in actions. Empty for anonymous
+// viewers (the brand + menu button still hold the left).
 const hasRightItems = computed(() => loggedIn.value)
 
 const userMenuItems = computed(() => [
@@ -36,13 +38,25 @@ const userMenuItems = computed(() => [
          keeps the bar the same height whether or not the (taller)
          action buttons are present. -->
     <div class="flex items-center justify-between gap-2 px-4 py-1.5 min-h-11">
-      <NuxtLink
-        to="/"
-        class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
-      >
-        <img src="/favicon.svg" class="w-5 h-5 shrink-0" alt="logo">
-        <span class="font-semibold text-sm truncate">Notes</span>
-      </NuxtLink>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <!-- Menu button: opens the nav drawer on small screens only. -->
+        <UButton
+          class="lg:hidden hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 transition-colors"
+          icon="i-lucide-menu"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          aria-label="Toggle navigation"
+          @click="toggleSidebar"
+        />
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+        >
+          <img src="/favicon.svg" class="w-5 h-5 shrink-0" alt="logo">
+          <span class="font-semibold text-sm truncate">Notes</span>
+        </NuxtLink>
+      </div>
 
       <div v-if="hasRightItems" class="flex items-center gap-2">
         <UButton
