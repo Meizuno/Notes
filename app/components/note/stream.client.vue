@@ -295,12 +295,24 @@ function applyCollapseState() {
 // spans).
 let observer: MutationObserver | null = null
 let applying = false
+let pending = false
 function scheduleApply() {
-  if (applying) return
+  // Coalesce, don't drop. If a pass is already in flight, record that
+  // another is needed and run it right after this one. The old code
+  // returned early here, which could skip the pass that would inject the
+  // chevron for a chunk whose <MDCRenderer> rendered while a pass was in
+  // flight — flaky, and far likelier on slower (mobile) devices where
+  // chunks land later and overlap the passes. The follow-up pass is
+  // idempotent (it only adds the missing chevrons/wrappers), so at most
+  // one extra no-op pass runs once the DOM has settled.
+  if (applying) { pending = true; return }
   applying = true
   Promise.resolve().then(() => {
     try { applyCollapseState() }
-    finally { applying = false }
+    finally {
+      applying = false
+      if (pending) { pending = false; scheduleApply() }
+    }
   })
 }
 
