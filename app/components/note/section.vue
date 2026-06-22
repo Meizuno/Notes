@@ -34,8 +34,14 @@ function toggle() {
     <MDCRenderer :body="fold.rootOf([section.heading])" />
   </div>
 
+  <!-- A single inner child is required: the .kb-fold-block grid collapses
+       via grid-template-rows 1fr→0fr, which only zeroes its first row.
+       Wrapping all the body content in one div keeps it to one row so the
+       whole section actually collapses (not just its first block). -->
   <div class="kb-fold-block" :class="{ 'is-folded': collapsed }">
-    <MDCRenderer v-if="section.blocks.length" :body="fold.rootOf(section.blocks)" />
-    <NoteSection v-for="child in section.children" :key="child.index" :section="child" />
+    <div class="kb-fold-block-inner">
+      <MDCRenderer v-if="section.blocks.length" :body="fold.rootOf(section.blocks)" />
+      <NoteSection v-for="child in section.children" :key="child.index" :section="child" />
+    </div>
   </div>
 </template>
