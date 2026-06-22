@@ -25,9 +25,14 @@ if (route.path !== '/login') {
     <NuxtRouteAnnouncer />
     <div v-if="showShell" class="flex flex-col h-dvh w-full overflow-hidden">
       <AppHeader />
-      <main class="flex-1 min-h-0 overflow-auto">
-        <NuxtPage />
-      </main>
+      <!-- `relative` anchors the small-screen sidebar drawer + backdrop to
+           the content row (below the header), not the whole viewport. -->
+      <div class="relative flex flex-1 min-h-0">
+        <AppSidebar />
+        <main class="flex-1 min-w-0 overflow-auto">
+          <NuxtPage />
+        </main>
+      </div>
       <AppFooter />
     </div>
     <NuxtPage v-else />
