@@ -5,14 +5,12 @@ const route = useRoute()
 const id = String(route.params.id)
 const { loggedIn } = useAuth()
 
-// SSR-fetch the note so Google sees real title/description in the
-// head. The body still streams via <NoteStream> for the progressive
-// rendering UX; this extra fetch is meta-only and discarded after
-// `useSeoMeta` consumes it. 404 (private / not visible / missing)
-// falls through to NoteStream's own not-found state.
+// SSR-fetch the note once: drives the SEO head AND the rendered body
+// (NoteContent parses `content`). 404 (private / not visible / missing)
+// leaves noteMeta null → the not-found message.
 const config = useRuntimeConfig()
 const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
-const { data: noteMeta, refresh: refreshMeta } = await useFetch<Note>(`/api/notes/${id}`, {
+const { data: noteMeta } = await useFetch<Note>(`/api/notes/${id}`, {
   key: `note-meta-${id}`
 })
 
@@ -35,9 +33,7 @@ if (noteMeta.value) {
   }
 }
 
-// All edit-mode state + the load/save/delete flows live in the
-// composable; the page just binds them. `version` keys <NoteStream>
-// so it remounts and re-fetches after a save.
+// Edit-mode state + flows live in the composable; the page binds them.
 const {
   editing,
   title,
@@ -48,20 +44,24 @@ const {
   isShared,
   saving,
   loadingEdit,
-  version,
   startEdit,
   saveEdit,
   deleteNote
 } = useNoteEditor(id)
 
-// A note is shareable-by-link when it's PUBLIC or explicitly shared —
-// only then does its URL work for other people, so only then do we offer
-// the copy-link button. Refresh the meta after a save so toggling the
-// share switch in edit mode flips the button without a reload.
+// saveEdit returns the saved note; adopt it so the view (content,
+// updated_at → NoteContent remount, is_shared → copy-link) refreshes
+// synchronously, no extra round-trip.
+async function onSave() {
+  const updated = await saveEdit()
+  if (updated) noteMeta.value = updated
+}
+
+// A note is shareable-by-link when it's PUBLIC or explicitly shared — only
+// then does its URL work for others, so only then do we offer copy-link.
 const shareable = computed(() =>
   !!noteMeta.value && (noteMeta.value.is_shared || noteMeta.value.visibility === 'PUBLIC')
 )
-watch(version, () => { refreshMeta() })
 
 const toast = useToast()
 async function copyLink() {
@@ -74,6 +74,12 @@ async function copyLink() {
     toast.add({ title: 'Copy failed', description: 'Clipboard unavailable', color: 'error' })
   }
 }
+
+const formattedDate = computed(() =>
+  noteMeta.value
+    ? new Date(noteMeta.value.updated_at).toLocaleDateString('en', { day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+)
 </script>
 
 <template>
@@ -89,44 +95,57 @@ async function copyLink() {
         v-model:shared="isShared"
         :saving="saving"
         submit-label="Save"
-        @submit="saveEdit"
+        @submit="onSave"
         @cancel="editing = false"
       />
     </template>
 
     <!-- View mode -->
     <template v-else>
-      <!-- Everything (metadata + body) streams from
-           /api/notes/<id>/stream so navigation is instant and the
-           page paints progressively as bytes arrive. The actions
-           slot puts Edit/Delete inline with the title row. -->
-      <NoteStream :id="id" :key="version">
-        <template #actions>
-          <!-- Copy-link shows whenever the URL actually works for others
-               (PUBLIC or shared), available to any viewer. Edit/Delete
-               stay behind the auth gate. -->
-          <UButton
-            v-if="shareable"
-            icon="i-lucide-link"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            aria-label="Copy link"
-            @click="copyLink"
-          />
-          <template v-if="loggedIn">
+      <div v-if="!noteMeta" class="text-sm text-muted pt-6">Note not found.</div>
+      <template v-else>
+        <!-- Title row, sticky to the scroll container. Copy-link shows when
+             the URL works for others (PUBLIC / shared); Edit/Delete are
+             auth-gated. -->
+        <div class="sticky top-0 z-10 bg-default -mx-4 px-4 py-3 mb-4 flex items-start justify-between gap-3 border-b border-default/60">
+          <h1 class="text-2xl font-bold leading-tight min-w-0 flex-1">{{ noteMeta.title }}</h1>
+          <div class="flex gap-1 shrink-0">
             <UButton
-              icon="i-lucide-pencil"
+              v-if="shareable"
+              icon="i-lucide-link"
               variant="ghost"
               color="neutral"
               size="sm"
-              :loading="loadingEdit"
-              @click="startEdit"
+              aria-label="Copy link"
+              @click="copyLink"
             />
-            <UButton icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" @click="deleteNote" />
-          </template>
-        </template>
-      </NoteStream>
+            <template v-if="loggedIn">
+              <UButton
+                icon="i-lucide-pencil"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                :loading="loadingEdit"
+                @click="startEdit"
+              />
+              <UButton icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" @click="deleteNote" />
+            </template>
+          </div>
+        </div>
+
+        <p v-if="noteMeta.folder" class="text-xs text-muted mb-1 flex items-center gap-1">
+          <UIcon name="i-lucide-folder" class="size-3" />
+          {{ noteMeta.folder }}
+        </p>
+        <p class="text-xs text-muted mb-6">Last updated: {{ formattedDate }}</p>
+
+        <NoteContent
+          :id="id"
+          :key="noteMeta.updated_at"
+          :content="noteMeta.content"
+          :updated-at="noteMeta.updated_at"
+        />
+      </template>
     </template>
   </div>
 </template>
