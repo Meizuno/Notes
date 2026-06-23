@@ -58,6 +58,10 @@ export default defineNuxtConfig({
     // startup (server/plugins/validate-env) and consumed by getPrisma.
     databaseUrl: '',
     authServiceUrl: '',
+    // Parent domain for the shared auth cookies (NUXT_COOKIE_DOMAIN, e.g.
+    // `.meizuno.com`) so one sign-in spans every *.meizuno.com app. Empty in
+    // dev → host-only cookies on localhost.
+    cookieDomain: '',
     // Shared secret ai-chat presents as `x-api-key` when calling
     // /api/prompts/* endpoints on behalf of a user. Empty in dev
     // disables API-key auth; the prompt endpoints fall back to the
