@@ -34,6 +34,21 @@ RUN chmod +x entrypoint.sh
 RUN npm install -g prisma@6 \
  && npm cache clean --force
 
+# --- TEMPORARY: one-off slug backfill tooling --------------------------
+# Makes `docker compose exec notes tsx prisma/backfill-slugs.ts` runnable in
+# the deployed container. That script is a standalone tsx entrypoint, and
+# this stage normally lacks everything it needs: tsx, its two runtime deps,
+# a resolvable Prisma client (the app's is inlined in .output), and the one
+# source file it imports (server/utils/slug.ts — server/ isn't copied here).
+# A dummy DB URL satisfies `prisma generate` (it makes no connection).
+# Remove this whole block once the backfill has been run in production.
+COPY --from=builder /app/server/utils/slug.ts ./server/utils/slug.ts
+RUN npm install -g tsx \
+ && npm install @prisma/client@^6.5.0 @sindresorhus/slugify@^3.0.0 \
+ && NUXT_DATABASE_URL="postgresql://x:x@x:5432/x" npx prisma generate \
+ && npm cache clean --force
+# -----------------------------------------------------------------------
+
 EXPOSE 3000
 
 # Container readiness probe — Docker / Compose / orchestrators can wait
