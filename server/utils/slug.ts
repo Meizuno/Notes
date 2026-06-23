@@ -15,8 +15,8 @@ export function slugifyTitle(title: string): string {
 
 // Slugs a note may not take, because notes are served at the root
 // (`/<slug>`) and would otherwise shadow these top-level routes. The
-// uniqueness loops (uniqueNoteSlug, the seed, the backfill) treat a
-// reserved slug as already taken, so they fall through to `<base>-2`.
+// uniqueness loops (uniqueNoteSlug and the seed) treat a reserved slug
+// as already taken, so they fall through to `<base>-2`.
 export const RESERVED_SLUGS = new Set(['new', 'login', 'api'])
 
 export function isReservedSlug(slug: string): boolean {
