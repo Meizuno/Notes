@@ -59,6 +59,7 @@ export type ListNotesQuery = z.infer<typeof listNotesQuerySchema>
 // by the time it reaches a component.
 export type Note = {
   id: string
+  slug: string
   title: string
   folder: string | null
   description: string | null

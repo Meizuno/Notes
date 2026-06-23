@@ -2,7 +2,7 @@ import type { H3Event } from 'h3'
 import type { CreateNoteInput, UpdateNoteInput, ListNotesQuery } from '#shared/schemas/note'
 import { getPrisma } from '../utils/db'
 import { requireAuthUser, viewerId } from '../utils/auth'
-import { NOTE_SELECT, buildNoteUpdateData, listNotesScoped, softDeleteScoped, updateNoteScoped } from '../utils/notes'
+import { NOTE_SELECT, buildNoteUpdateData, listNotesScoped, softDeleteScoped, updateNoteScoped, uniqueNoteSlug } from '../utils/notes'
 
 // HTTP use-cases for the Note resource. Thin wrappers over the shared,
 // transport-agnostic data-access in ../utils/notes (which owns the
@@ -17,9 +17,13 @@ import { NOTE_SELECT, buildNoteUpdateData, listNotesScoped, softDeleteScoped, up
 
 export async function createNote(event: H3Event, input: CreateNoteInput) {
   const user = requireAuthUser(event)
+  // Slug derived from the title once, at create — fixed thereafter (a later
+  // rename keeps it). Unique across the table (-2, -3, … on collision).
+  const slug = await uniqueNoteSlug(input.title)
   return getPrisma().note.create({
     data: {
       user_id: user.id,
+      slug,
       title: input.title,
       content: input.content,
       // Schema already trims; collapse empty/absent to null here.

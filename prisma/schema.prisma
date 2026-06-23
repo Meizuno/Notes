@@ -23,6 +23,12 @@ model Note {
   // before the row hits the DB (useful for optimistic creates +
   // sharable URLs that aren't enumerable like autoincrement ints).
   id         String   @id @default(uuid()) @db.Uuid
+  // URL slug, derived from the title at create time (transliterated +
+  // dash-joined, see server/utils/slug.ts) and unique across the table.
+  // Drives friendly `/notes/<slug>` URLs; read paths still resolve by the
+  // UUID too, so older `/notes/<uuid>` links keep working. Fixed after
+  // creation — renaming a note does not change its slug.
+  slug       String   @unique @db.VarChar(120)
   user_id    String
   title       String  @db.VarChar(300)
   folder      String? @db.VarChar(500)

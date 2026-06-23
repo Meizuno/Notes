@@ -13,7 +13,8 @@
     "postinstall": "nuxt prepare && prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "slugs:backfill": "tsx prisma/backfill-slugs.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -23,6 +24,7 @@
     "@nuxt/ui": "^4.6.1",
     "@nuxtjs/mdc": "^0.21.1",
     "@prisma/client": "^6.5.0",
+    "@sindresorhus/slugify": "^3.0.0",
     "consola": "^3.4.2",
     "d3-force": "^3.0.0",
     "nuxt": "^4.4.2",

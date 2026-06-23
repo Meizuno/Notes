@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   return db.note.findMany({
     where: noteVisibilityWhere(viewerId(event)),
-    select: { id: true, title: true, folder: true, created_at: true },
+    select: { id: true, slug: true, title: true, folder: true, created_at: true },
     orderBy: { created_at: 'asc' }
   })
 })
