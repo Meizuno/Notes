@@ -2,7 +2,7 @@ import { getHeader, setHeader } from 'h3'
 
 // robots.txt — tells crawlers where the sitemap lives and which
 // paths to leave alone (auth + edit flows, API surface). Public note
-// pages (`/notes/<uuid>`) and the home page are crawlable by default.
+// pages (`/<slug>`) and the home page are crawlable by default.
 
 export default defineEventHandler((event) => {
   const config = useRuntimeConfig()
@@ -14,7 +14,7 @@ export default defineEventHandler((event) => {
   const body =
     `User-agent: *\n` +
     `Disallow: /login\n` +
-    `Disallow: /notes/new\n` +
+    `Disallow: /new\n` +
     `Disallow: /api/\n` +
     `\n` +
     `Sitemap: ${siteUrl}/sitemap.xml\n`

@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client'
 // getPrisma from server/utils/db.
 const note = {
   findFirst: vi.fn(),
+  findUnique: vi.fn(),
   findMany: vi.fn(),
   update: vi.fn(),
   updateMany: vi.fn(),
@@ -15,6 +16,8 @@ vi.mock('../../../server/utils/db', () => ({ getPrisma: () => ({ note }) }))
 const {
   noteVisibilityWhere,
   noteByIdReadableWhere,
+  noteKeyWhere,
+  uniqueNoteSlug,
   makeNoteSnippet,
   buildNoteUpdateData,
   listNotesScoped,
@@ -27,6 +30,7 @@ const { NoteNotFound } = await import('../../../server/utils/errors')
 
 beforeEach(() => {
   note.findFirst.mockReset()
+  note.findUnique.mockReset()
   note.findMany.mockReset()
   note.update.mockReset()
   note.updateMany.mockReset()
@@ -138,34 +142,82 @@ describe('listNotesScoped', () => {
   })
 })
 
+describe('noteKeyWhere', () => {
+  it('matches a normal slug by slug only (id is a UUID column → no cast)', () => {
+    expect(noteKeyWhere('ddd-overview')).toEqual({ slug: 'ddd-overview' })
+  })
+  it('matches a UUID key by slug OR id (legacy links)', () => {
+    const uuid = 'b5636819-edc4-491c-a492-a4719f332a2c'
+    expect(noteKeyWhere(uuid)).toEqual({ OR: [{ slug: uuid }, { id: uuid }] })
+  })
+})
+
+describe('uniqueNoteSlug', () => {
+  it('returns the base slug when free', async () => {
+    note.findUnique.mockResolvedValue(null)
+    expect(await uniqueNoteSlug('DDD Overview')).toBe('ddd-overview')
+  })
+  it('appends -2, -3, … until a free slug is found', async () => {
+    // base + base-2 taken, base-3 free.
+    note.findUnique
+      .mockResolvedValueOnce({ id: 'a' })
+      .mockResolvedValueOnce({ id: 'b' })
+      .mockResolvedValueOnce(null)
+    expect(await uniqueNoteSlug('DDD Overview')).toBe('ddd-overview-3')
+  })
+  it('skips a reserved base slug so a note cannot shadow a top-level route', async () => {
+    // 'New' → 'new' is reserved → falls through to 'new-2' without a DB hit.
+    note.findUnique.mockResolvedValue(null)
+    expect(await uniqueNoteSlug('New')).toBe('new-2')
+  })
+})
+
 describe('loadNoteScoped', () => {
-  it('reads a single note within the viewer scope', async () => {
+  it('resolves by slug-or-id within the viewer scope', async () => {
     note.findFirst.mockResolvedValue({ id: 'n1' })
-    await loadNoteScoped('u1', 'n1')
-    expect(note.findFirst.mock.calls[0][0].where).toEqual({ id: 'n1', ...noteVisibilityWhere('u1') })
+    await loadNoteScoped('u1', 'my-note')
+    expect(note.findFirst.mock.calls[0][0].where).toEqual({
+      ...noteVisibilityWhere('u1'),
+      AND: [noteKeyWhere('my-note')]
+    })
   })
 
   it('widens to the by-link readable scope with { includeShared: true }', async () => {
     note.findFirst.mockResolvedValue({ id: 'n1' })
-    await loadNoteScoped('u1', 'n1', { includeShared: true })
-    expect(note.findFirst.mock.calls[0][0].where).toEqual({ id: 'n1', ...noteByIdReadableWhere('u1') })
+    await loadNoteScoped('u1', 'my-note', { includeShared: true })
+    expect(note.findFirst.mock.calls[0][0].where).toEqual({
+      ...noteByIdReadableWhere('u1'),
+      AND: [noteKeyWhere('my-note')]
+    })
   })
 })
 
 describe('updateNoteScoped', () => {
-  it('carries the viewer scope in the where clause', async () => {
+  it('resolves the note by slug-or-id within scope, then updates by id', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
     note.update.mockResolvedValue({ id: 'n1' })
-    await updateNoteScoped('u1', 'n1', { title: 'x' })
-    expect(note.update.mock.calls[0][0].where).toEqual({ id: 'n1', ...noteVisibilityWhere('u1') })
+    await updateNoteScoped('u1', 'my-note', { title: 'x' })
+    expect(note.findFirst.mock.calls[0][0].where).toEqual({
+      ...noteVisibilityWhere('u1'),
+      AND: [noteKeyWhere('my-note')]
+    })
+    expect(note.update.mock.calls[0][0].where).toEqual({ id: 'n1' })
+  })
+  it('throws NoteNotFound when nothing matched the scope', async () => {
+    note.findFirst.mockResolvedValue(null)
+    await expect(updateNoteScoped('u1', 'gone', { title: 'x' })).rejects.toBeInstanceOf(NoteNotFound)
+    expect(note.update).not.toHaveBeenCalled()
   })
   it('maps Prisma P2025 to NoteNotFound', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
     note.update.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('not found', {
       code: 'P2025',
       clientVersion: 'test'
     }))
-    await expect(updateNoteScoped('u1', 'gone', { title: 'x' })).rejects.toBeInstanceOf(NoteNotFound)
+    await expect(updateNoteScoped('u1', 'n1', { title: 'x' })).rejects.toBeInstanceOf(NoteNotFound)
   })
   it('re-throws non-P2025 Prisma errors', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
     const other = new Prisma.PrismaClientKnownRequestError('boom', { code: 'P2002', clientVersion: 'test' })
     note.update.mockRejectedValue(other)
     await expect(updateNoteScoped('u1', 'n1', {})).rejects.toBe(other)
@@ -173,14 +225,14 @@ describe('updateNoteScoped', () => {
 })
 
 describe('softDeleteScoped', () => {
-  it('soft-deletes within scope and returns the id', async () => {
+  it('soft-deletes within scope (slug-or-id) and returns the key', async () => {
     note.updateMany.mockResolvedValue({ count: 1 })
-    const result = await softDeleteScoped('u1', 'n1')
+    const result = await softDeleteScoped('u1', 'my-note')
     expect(note.updateMany).toHaveBeenCalledWith({
-      where: { id: 'n1', ...noteVisibilityWhere('u1') },
+      where: { ...noteVisibilityWhere('u1'), AND: [noteKeyWhere('my-note')] },
       data: { is_deleted: true }
     })
-    expect(result).toEqual({ deleted: 'n1' })
+    expect(result).toEqual({ deleted: 'my-note' })
   })
   it('throws NoteNotFound when no row matched the scope', async () => {
     note.updateMany.mockResolvedValue({ count: 0 })

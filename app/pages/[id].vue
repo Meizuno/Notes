@@ -16,7 +16,9 @@ const { data: noteMeta } = await useFetch<Note>(`/api/notes/${id}`, {
 
 if (noteMeta.value) {
   const isPublic = noteMeta.value.visibility === 'PUBLIC'
-  const canonical = siteUrl ? `${siteUrl}/notes/${id}` : undefined
+  // Canonical always uses the friendly slug, even when reached via the
+  // UUID URL, so the two URLs dedupe to one for search engines.
+  const canonical = siteUrl ? `${siteUrl}/${noteMeta.value.slug}` : undefined
   useSeoMeta({
     title: noteMeta.value.title,
     description: noteMeta.value.description ?? undefined,
@@ -67,7 +69,7 @@ const toast = useToast()
 async function copyLink() {
   const base = siteUrl || window.location.origin
   try {
-    await navigator.clipboard.writeText(`${base}/notes/${id}`)
+    await navigator.clipboard.writeText(`${base}/${noteMeta.value?.slug ?? id}`)
     toast.add({ title: 'Link copied', icon: 'i-lucide-check', color: 'success' })
   }
   catch {

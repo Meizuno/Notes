@@ -10,6 +10,7 @@ import {
   loadNoteScoped,
   makeNoteSnippet,
   softDeleteScoped,
+  uniqueNoteSlug,
   updateNoteScoped
 } from '../notes'
 
@@ -104,6 +105,7 @@ export function registerNoteTools(server: McpServer, db: PrismaClient, userId: s
       const note = await db.note.create({
         data: {
           user_id: userId,
+          slug: await uniqueNoteSlug(trimmedTitle),
           title: trimmedTitle,
           content: content ?? '',
           description: description?.trim() || null,

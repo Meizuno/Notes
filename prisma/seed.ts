@@ -7,6 +7,7 @@
 // vault no longer has a wiki-link layer.
 
 import { PrismaClient } from '@prisma/client'
+import { slugifyTitle, isReservedSlug } from '../server/utils/slug'
 
 const db = new PrismaClient()
 const USER_ID = 'seed-user'
@@ -242,10 +243,17 @@ async function main() {
   await db.note.deleteMany({ where: { user_id: USER_ID } })
 
   console.log(`[seed] creating ${notes.length} notes`)
+  const takenSlugs = new Set<string>()
   for (const n of notes) {
+    const base = slugifyTitle(n.title)
+    let slug = base
+    let i = 2
+    while (isReservedSlug(slug) || takenSlugs.has(slug)) slug = `${base}-${i++}`
+    takenSlugs.add(slug)
     await db.note.create({
       data: {
         user_id: USER_ID,
+        slug,
         title: n.title,
         folder: n.folder ?? null,
         description: n.description ?? null,

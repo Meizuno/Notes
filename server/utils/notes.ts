@@ -1,6 +1,7 @@
 import { Prisma, NoteVisibility } from '@prisma/client'
 import { getPrisma } from './db'
 import { NoteNotFound } from './errors'
+import { slugifyTitle, isReservedSlug } from './slug'
 
 // Single home for note data-access. The visibility rule and the scoped,
 // atomic CRUD live here exactly once so every caller (HTTP services, MCP
@@ -19,6 +20,7 @@ export { NoteVisibility }
 // mutations. (Matches what MCP's get_note returned.)
 export type NoteRow = {
   id: string
+  slug: string
   title: string
   folder: string | null
   description: string | null
@@ -33,6 +35,7 @@ export type NoteRow = {
 // snippet / hasContent, and `visibility` for MCP.
 export type NoteListRow = {
   id: string
+  slug: string
   title: string
   folder: string | null
   content: string
@@ -51,6 +54,7 @@ export type NoteListParams = {
 // return the same shape — the wire Note plus created_at.
 export const NOTE_SELECT = {
   id: true,
+  slug: true,
   title: true,
   folder: true,
   description: true,
@@ -96,6 +100,36 @@ export function noteByIdReadableWhere(viewerId: string | null): Prisma.NoteWhere
     is_deleted: false,
     OR: [...tier, { is_shared: true }]
   }
+}
+
+// Match a note by slug OR id, so friendly `/<slug>` URLs and older
+// `/<uuid>` links (and redirected `/notes/<uuid>` ones) both resolve.
+// Callers AND this with the visibility
+// scope (both use a top-level OR, which can't share one object key).
+//
+// `id` is a Postgres UUID column, so comparing it against a non-UUID slug
+// throws P2023 ("invalid character"). Only include the id branch when the
+// key actually looks like a UUID; a normal slug matches by slug alone.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export function noteKeyWhere(key: string): Prisma.NoteWhereInput {
+  return UUID_RE.test(key)
+    ? { OR: [{ slug: key }, { id: key }] }
+    : { slug: key }
+}
+
+// Generate a table-unique slug for a new note: the base slug from the
+// title, then -2, -3, … until free. Checked against ALL rows (the slug
+// uniqueness is table-wide, including soft-deleted notes) and against the
+// reserved set, so a note can never shadow a top-level route (/new, …).
+export async function uniqueNoteSlug(title: string): Promise<string> {
+  const db = getPrisma()
+  const base = slugifyTitle(title)
+  let candidate = base
+  let n = 2
+  while (isReservedSlug(candidate) || await db.note.findUnique({ where: { slug: candidate }, select: { id: true } })) {
+    candidate = `${base}-${n++}`
+  }
+  return candidate
 }
 
 // Snippet for list/search results. Search-aware: a window around the first
@@ -170,7 +204,7 @@ export async function listNotesScoped(
   const [items, total] = await Promise.all([
     db.note.findMany({
       where,
-      select: { id: true, title: true, folder: true, content: true, visibility: true, updated_at: true },
+      select: { id: true, slug: true, title: true, folder: true, content: true, visibility: true, updated_at: true },
       orderBy: { updated_at: 'desc' },
       skip: offset,
       take: limit
@@ -187,51 +221,51 @@ export async function listNotesScoped(
 // tier-only scope.
 export function loadNoteScoped(
   viewerId: string | null,
-  id: string,
+  key: string,
   opts: { includeShared?: boolean } = {}
 ): Promise<NoteRow | null> {
   const scope = opts.includeShared ? noteByIdReadableWhere(viewerId) : noteVisibilityWhere(viewerId)
   return getPrisma().note.findFirst({
-    where: { id, ...scope },
+    where: { ...scope, AND: [noteKeyWhere(key)] },
     select: NOTE_SELECT
   })
 }
 
-// Atomic scoped update: the existence + visibility filter rides in the
-// where clause, so there's no read-then-write race and a user can't touch
-// another user's PRIVATE note. Prisma's P2025 ("no row matched") becomes
-// NoteNotFound — the one allowed catch, at the Prisma adapter boundary.
+// Scoped update by slug-or-id. The note is first resolved WITHIN the
+// viewer's visibility scope (so a user can't reach another's PRIVATE note),
+// then updated by its resolved id. `update`'s where takes a single unique
+// field, so we can't put the slug-or-id OR there directly — hence the
+// resolve-then-update. P2025 (row vanished between the two) → NoteNotFound.
 export async function updateNoteScoped(
   viewerId: string | null,
-  id: string,
+  key: string,
   data: Prisma.NoteUpdateInput
 ): Promise<NoteRow> {
+  const db = getPrisma()
+  const target = await db.note.findFirst({
+    where: { ...noteVisibilityWhere(viewerId), AND: [noteKeyWhere(key)] },
+    select: { id: true }
+  })
+  if (!target) throw new NoteNotFound(key)
   try {
-    return await getPrisma().note.update({
-      // Spread first, then `id` last: update's where is NoteWhereUniqueInput
-      // (id: string), and the visibility fragment's optional id type would
-      // otherwise widen it.
-      where: { ...noteVisibilityWhere(viewerId), id },
-      data,
-      select: NOTE_SELECT
-    })
+    return await db.note.update({ where: { id: target.id }, data, select: NOTE_SELECT })
   }
   catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      throw new NoteNotFound(id)
+      throw new NoteNotFound(key)
     }
     throw err
   }
 }
 
-// Atomic scoped soft delete. updateMany returns a count rather than
-// throwing, so a zero count (no row matched the id + visibility scope) is
-// the not-found signal.
-export async function softDeleteScoped(viewerId: string | null, id: string): Promise<{ deleted: string }> {
+// Atomic scoped soft delete. updateMany carries the slug-or-id match AND the
+// visibility scope in one statement, so a zero count (nothing matched) is
+// the not-found signal — no read-then-write race.
+export async function softDeleteScoped(viewerId: string | null, key: string): Promise<{ deleted: string }> {
   const { count } = await getPrisma().note.updateMany({
-    where: { id, ...noteVisibilityWhere(viewerId) },
+    where: { ...noteVisibilityWhere(viewerId), AND: [noteKeyWhere(key)] },
     data: { is_deleted: true }
   })
-  if (count === 0) throw new NoteNotFound(id)
-  return { deleted: id }
+  if (count === 0) throw new NoteNotFound(key)
+  return { deleted: key }
 }

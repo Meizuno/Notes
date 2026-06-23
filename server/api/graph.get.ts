@@ -25,6 +25,7 @@ type NodeType = 'note' | 'folder'
 
 type GraphNode = {
   id: string
+  slug?: string             // note nodes only — drives the /<slug> link
   title: string
   type: NodeType
   folder: string | null     // parent folder path (null = root)
@@ -66,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
   const notes = await db.note.findMany({
     where: noteVisibilityWhere(viewerId(event)),
-    select: { id: true, title: true, folder: true }
+    select: { id: true, slug: true, title: true, folder: true }
   })
 
   const nodes: GraphNode[] = []
@@ -96,6 +97,7 @@ export default defineEventHandler(async (event) => {
   for (const n of notes) {
     nodes.push({
       id: n.id,
+      slug: n.slug,
       title: n.title,
       type: 'note',
       folder: n.folder,

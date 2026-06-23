@@ -27,6 +27,7 @@ import {
 
 type Node = SimulationNodeDatum & {
   id: string
+  slug?: string
   title: string
   type: 'note' | 'folder'
   folder: string | null
@@ -375,8 +376,8 @@ function onNodePointerUp(node: Node, e: PointerEvent) {
   node.fx = null
   node.fy = null
   // Only note clicks navigate; folder pseudo-nodes are structural.
-  if (!dragState.value.moved && node.type === 'note') {
-    navigateTo(`/notes/${node.id}`)
+  if (!dragState.value.moved && node.type === 'note' && node.slug) {
+    navigateTo(`/${node.slug}`)
   }
   dragState.value = null
 }
@@ -491,7 +492,7 @@ onBeforeUnmount(() => {
         <UIcon name="i-lucide-network" class="size-10 text-muted" />
         <p class="text-sm text-muted">No notes yet</p>
         <UButton
-          to="/notes/new"
+          to="/new"
           icon="i-lucide-plus"
           label="Create your first note"
           size="sm"

@@ -11,24 +11,36 @@ const SKIP_PATHS = [
 
 const LOGIN_PATH = '/login'
 
-// Pages that anonymous visitors are allowed to load. The home page
-// (graph + tree) and individual note pages render public notes only —
-// data-layer filters in /api/notes/* handle the actual gating. Any
-// page not listed here redirects anon visitors to /login.
-//
-// Note IDs are UUIDs, so /notes/<uuid> matches the read view. The
-// edit-by-id path is the same URL with a query toggle, which is fine —
-// anon hitting "Edit" gets a 401 from the PUT endpoint.
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Top-level pages that require auth even though they look like a note
+// slug. Note slugs can never take these values (reserved at creation in
+// uniqueNoteSlug), so a `/new` hit is unambiguously the create page and
+// anon visitors are redirected to /login.
+const AUTH_REQUIRED_PAGES = new Set(['new'])
+
+// Pages that anonymous visitors are allowed to load. Notes live at the
+// root (`/<slug>`), so every single-segment page is public EXCEPT the
+// auth-required ones above — actual note read access is gated downstream
+// by the visibility filter (a note the viewer can't see just renders
+// not-found), so the middleware only lets the page load. Any page that
+// isn't public redirects anon visitors to /login.
 function isPublicPage(path: string): boolean {
   const pathname = (path.split('?')[0] ?? path)
   if (pathname === '/' || pathname === LOGIN_PATH) return true
-  const m = pathname.match(/^\/notes\/([^/]+)$/)
-  return !!(m && m[1] && UUID_RE.test(m[1]))
+  const m = pathname.match(/^\/([^/]+)$/)
+  return Boolean(m && m[1] && !AUTH_REQUIRED_PAGES.has(m[1]))
 }
 
 export default defineEventHandler(async (event) => {
   const path = event.path ?? "";
+
+  // Notes used to live under `/notes/<key>`; they now serve at the root
+  // (`/<slug>`). Permanently redirect the old page URLs so existing links
+  // and bookmarks (incl. `/notes/<uuid>`) keep working — this runs before
+  // the auth gate so an anonymous visitor on an old link isn't bounced to
+  // /login first. `/api/notes/*` is untouched (it doesn't match here).
+  const legacy = (path.split('?')[0] ?? path).match(/^\/notes\/([^/]+)$/)
+  if (legacy?.[1]) return sendRedirect(event, `/${legacy[1]}`, 301)
+
   if (SKIP_PATHS.some((p) => path.startsWith(p))) return;
 
   const isApi = path.startsWith("/api/");

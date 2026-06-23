@@ -5,7 +5,7 @@
 // bulk expand. Expand state persists across SPA navigation via a useState
 // key and resets to collapsed on a full reload.
 
-type FlatNote = { id: string, title: string, folder: string | null, created_at: string }
+type FlatNote = { id: string, slug: string, title: string, folder: string | null, created_at: string }
 
 type TreeItem = {
   label: string
@@ -25,9 +25,11 @@ const { data: notes } = await useFetch<FlatNote[]>('/api/notes/tree', { key: 'si
 const route = useRoute()
 const router = useRouter()
 
-// Highlight the active note when we're sitting on /notes/<id>.
+// Highlight the active note when we're sitting on a note page (/<slug>).
+// Notes live at the root, so the active key is the single path segment;
+// non-note roots (/new, /login) just won't match any tree row.
 const activeNoteId = computed(() => {
-  const m = route.path.match(/^\/notes\/([^/]+)/)
+  const m = route.path.match(/^\/([^/]+)\/?$/)
   return m && m[1] ? m[1] : null
 })
 
@@ -72,13 +74,15 @@ const items = computed<TreeItem[]>(() => {
     // onSelect, so clicking them just toggles expand via UTree's
     // built-in behavior — keeps the routing logic out of the v-model
     // emit, which gives us the item object (not the value).
-    const noteId = n.id
+    // The row's value is the slug so it matches the `/<slug>` URL for
+    // active-row highlighting, and clicking navigates by slug.
+    const slug = n.slug
     parent.children!.push({
       label: n.title,
-      value: noteId,
+      value: slug,
       icon: 'i-lucide-file-text',
       createdAt: n.created_at,
-      onSelect: () => router.push(`/notes/${noteId}`)
+      onSelect: () => router.push(`/${slug}`)
     })
   }
   // Sort children: folders first (so structure reads at a glance),
@@ -157,7 +161,7 @@ watchEffect(() => {
           <UIcon name="i-lucide-folder-tree" class="size-10 text-muted" />
           <p class="text-sm text-muted">No notes yet</p>
           <UButton
-            to="/notes/new"
+            to="/new"
             icon="i-lucide-plus"
             label="Create your first note"
             size="sm"

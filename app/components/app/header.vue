@@ -61,7 +61,7 @@ const userMenuItems = computed(() => [
       <div v-if="hasRightItems" class="flex items-center gap-2">
         <UButton
           v-if="loggedIn"
-          to="/notes/new"
+          to="/new"
           icon="i-lucide-plus"
           variant="ghost"
           color="neutral"

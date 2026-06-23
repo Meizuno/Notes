@@ -6,6 +6,8 @@ import { Prisma } from '@prisma/client'
 // layer it delegates to).
 const note = {
   create: vi.fn(),
+  findFirst: vi.fn(),
+  findUnique: vi.fn(),
   findMany: vi.fn(),
   update: vi.fn(),
   updateMany: vi.fn(),
@@ -22,10 +24,14 @@ function eventWith(user?: { id: string }): H3Event {
 
 beforeEach(() => {
   note.create.mockReset()
+  note.findFirst.mockReset()
+  note.findUnique.mockReset()
   note.findMany.mockReset()
   note.update.mockReset()
   note.updateMany.mockReset()
   note.count.mockReset()
+  // Default: slugs are free (uniqueNoteSlug's findUnique → null).
+  note.findUnique.mockResolvedValue(null)
 })
 
 describe('createNote', () => {
@@ -44,6 +50,7 @@ describe('createNote', () => {
     // assert on the data payload here.)
     expect(note.create.mock.calls[0][0].data).toEqual({
       user_id: 'u1',
+      slug: 'hello',
       title: 'Hello',
       content: 'body',
       folder: null,
@@ -83,16 +90,19 @@ describe('updateNote', () => {
     expect(note.update).not.toHaveBeenCalled()
   })
 
-  it('delegates a scoped update for the viewer with only the provided, trimmed keys', async () => {
+  it('resolves within the viewer scope then writes only the provided, trimmed keys', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
     note.update.mockResolvedValue({ id: 'n1' })
-    await updateNote(eventWith({ id: 'u1' }), 'n1', { title: '  New  ', folder: '' })
-    const call = note.update.mock.calls[0][0]
-    expect(call.where).toMatchObject({ id: 'n1' })
-    expect(call.where.OR).toBeTruthy() // viewer visibility scope present
-    expect(call.data).toEqual({ title: 'New', folder: null })
+    await updateNote(eventWith({ id: 'u1' }), 'my-note', { title: '  New  ', folder: '' })
+    // The visibility scope rides on the resolve (findFirst); the update is
+    // by the resolved id.
+    expect(note.findFirst.mock.calls[0][0].where.OR).toBeTruthy()
+    expect(note.update.mock.calls[0][0].where).toEqual({ id: 'n1' })
+    expect(note.update.mock.calls[0][0].data).toEqual({ title: 'New', folder: null })
   })
 
   it('propagates NoteNotFound (Prisma P2025) from the scoped update', async () => {
+    note.findFirst.mockResolvedValue({ id: 'n1' })
     note.update.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('x', {
       code: 'P2025',
       clientVersion: 'test'
