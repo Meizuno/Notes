@@ -16,7 +16,7 @@ async function save() {
   saving.value = true
   try {
     const note = await createNote(toCreateInput())
-    await navigateTo(`/notes/${note.id}`)
+    await navigateTo(`/${note.slug}`)
   }
   finally { saving.value = false }
 }

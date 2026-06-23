@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const db = getPrisma()
   const notes = await db.note.findMany({
     where: noteVisibilityWhere(viewerId(event)),
-    select: { id: true, updated_at: true },
+    select: { slug: true, updated_at: true },
     orderBy: { updated_at: 'desc' }
   })
 
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
 
   const noteEntries = notes.map(n =>
     `  <url>` +
-    `<loc>${escape(`${siteUrl}/notes/${n.id}`)}</loc>` +
+    `<loc>${escape(`${siteUrl}/${n.slug}`)}</loc>` +
     `<lastmod>${n.updated_at.toISOString()}</lastmod>` +
     `<changefreq>weekly</changefreq>` +
     `<priority>0.8</priority>` +
