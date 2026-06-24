@@ -68,6 +68,19 @@ function forwardRefreshedCookies(event: H3Event, accessToken: string, refreshTok
   req.headers.cookie = [...others, `${ACCESS_COOKIE}=${accessToken}`, `${REFRESH_COOKIE}=${refreshToken}`].join('; ')
 }
 
+// The auth service rotates the refresh token into its /refresh Set-Cookie
+// response (never the body, by design). Read the rotated value from there so
+// the server-side refresh can re-issue it to the browser.
+function rotatedRefresh(headers: Headers): string {
+  const getter = (headers as Headers & { getSetCookie?: () => string[] }).getSetCookie
+  const cookies = typeof getter === 'function' ? getter.call(headers) : []
+  for (const c of cookies) {
+    const m = c.match(new RegExp(`^\\s*${REFRESH_COOKIE}=([^;]*)`))
+    if (m?.[1]) return decodeURIComponent(m[1])
+  }
+  return ''
+}
+
 /**
  * Authenticate the request. Checks access token first, then tries refresh.
  * Sets event.context.user and event.context.accessToken on success.
@@ -100,22 +113,27 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
 
   try {
     const config = useRuntimeConfig()
-    const result = await $fetch<{ access_token: string, refresh_token: string }>(
+    const res = await $fetch.raw<{ access_token: string }>(
       `${config.authServiceUrl}/refresh`,
       { method: 'POST', body: { refresh_token: refreshToken } }
     )
+    const newAccess = res._data?.access_token ?? ''
+    // The rotated refresh token rides only in the auth service's Set-Cookie,
+    // never the response body — read it from there to re-issue it.
+    const newRefresh = rotatedRefresh(res.headers)
+    if (!newAccess || !newRefresh) return null
 
-    setAuthCookies(event, result.access_token, result.refresh_token)
+    setAuthCookies(event, newAccess, newRefresh)
     // Rewrite this request's cookie header so SSR inner fetches forward the
     // fresh pair instead of the stale (rotated-away) one the browser sent.
-    forwardRefreshedCookies(event, result.access_token, result.refresh_token)
+    forwardRefreshedCookies(event, newAccess, newRefresh)
 
-    const newUserId = await validateToken(result.access_token)
+    const newUserId = await validateToken(newAccess)
     if (!newUserId) return null
 
     const user: AuthUser = { id: newUserId }
     event.context.user = user
-    event.context.accessToken = result.access_token
+    event.context.accessToken = newAccess
     return user
   }
   catch {
