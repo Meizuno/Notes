@@ -34,18 +34,6 @@ RUN chmod +x entrypoint.sh
 RUN npm install -g prisma@6 \
  && npm cache clean --force
 
-# --- TEMPORARY: one-off note-relink tooling ----------------------------
-# Makes `docker compose exec notes tsx prisma/relink-notes.ts` runnable in the
-# deployed container: the runner stage normally lacks tsx and a resolvable
-# Prisma client (the app's is inlined in .output). A dummy DB URL satisfies
-# `prisma generate` (it makes no connection).
-# Remove this whole block once the relink has been run in production.
-RUN npm install -g tsx \
- && npm install @prisma/client@^6.5.0 \
- && NUXT_DATABASE_URL="postgresql://x:x@x:5432/x" npx prisma generate \
- && npm cache clean --force
-# -----------------------------------------------------------------------
-
 EXPOSE 3000
 
 # Container readiness probe — Docker / Compose / orchestrators can wait
