@@ -1,19 +1,14 @@
 <script setup lang="ts">
 // Top header strip — visible at every breakpoint. Brand on the left
 // links to the home view; the right side carries the global "new
-// note" action and the user dropdown for signed-in viewers.
-// Anonymous viewers see no "Log in" affordance — the route is
-// reachable directly at /login by anyone who knows it.
+// note" action and the user dropdown for signed-in viewers, and a
+// "Log in" button for anonymous viewers.
 
 const { user, loggedIn, logout } = useAuth()
 
 // Toggles the navigation sidebar's off-canvas drawer on small screens
 // (the sidebar is always visible on large, so the button is lg:hidden).
 const { toggle: toggleSidebar } = useSidebar()
-
-// The right cluster carries the signed-in actions. Empty for anonymous
-// viewers (the brand + menu button still hold the left).
-const hasRightItems = computed(() => loggedIn.value)
 
 const userMenuItems = computed(() => [
   [{
@@ -58,29 +53,41 @@ const userMenuItems = computed(() => [
         </NuxtLink>
       </div>
 
-      <div v-if="hasRightItems" class="flex items-center gap-2">
-        <UButton
-          v-if="loggedIn"
-          to="/new"
-          icon="i-lucide-plus"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          label="New"
-          class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
-        />
-
-        <UDropdownMenu v-if="loggedIn" :items="userMenuItems" :ui="{ content: 'w-52' }">
+      <div class="flex items-center gap-2">
+        <template v-if="loggedIn">
           <UButton
+            to="/new"
+            icon="i-lucide-plus"
             variant="ghost"
             color="neutral"
             size="sm"
-            class="gap-1.5 px-1.5 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
-          >
-            <UAvatar :src="user?.picture ?? undefined" :alt="user?.name ?? undefined" size="2xs" />
-            <UIcon name="i-lucide-chevron-down" class="size-3 text-muted" />
-          </UButton>
-        </UDropdownMenu>
+            label="New"
+            class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
+          />
+
+          <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-52' }">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              class="gap-1.5 px-1.5 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
+            >
+              <UAvatar :src="user?.picture ?? undefined" :alt="user?.name ?? undefined" size="2xs" />
+              <UIcon name="i-lucide-chevron-down" class="size-3 text-muted" />
+            </UButton>
+          </UDropdownMenu>
+        </template>
+
+        <UButton
+          v-else
+          to="/login"
+          icon="i-lucide-log-in"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          label="Log in"
+          class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
+        />
       </div>
     </div>
   </header>

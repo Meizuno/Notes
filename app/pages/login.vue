@@ -28,6 +28,12 @@ const signIn = () => { window.location.href = '/api/auth/google' }
         title="Authentication error"
         description="Invalid token. Please try again."
       />
+      <UAlert
+        v-else-if="error === 'auth_failed'"
+        color="error"
+        title="Authentication error"
+        description="Sign-in failed. Please try again."
+      />
 
       <UButton
         icon="i-simple-icons-google"
