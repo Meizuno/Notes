@@ -62,11 +62,6 @@ export default defineNuxtConfig({
     // `.meizuno.com`) so one sign-in spans every *.meizuno.com app. Empty in
     // dev → host-only cookies on localhost.
     cookieDomain: '',
-    // Shared secret ai-chat presents as `x-api-key` when calling
-    // /api/prompts/* endpoints on behalf of a user. Empty in dev
-    // disables API-key auth; the prompt endpoints fall back to the
-    // user session in that case.
-    mcpApiKey: '',
     public: {
       // Canonical site URL (no trailing slash). Used by the sitemap
       // and `<link rel="canonical">` tags to emit absolute URLs.

@@ -49,7 +49,6 @@ is validated at startup — the server **exits** if it's missing or invalid
 | `NUXT_DATABASE_URL` | ✅ | Postgres connection string |
 | `NUXT_AUTH_SERVICE_URL` | ✅ | Base URL of the external auth service |
 | `NUXT_COOKIE_DOMAIN` | – | Parent domain for the shared auth cookies (e.g. `.meizuno.com`) so one sign-in spans every `*.meizuno.com` app; empty → host-only cookies (dev) |
-| `NUXT_MCP_API_KEY` | – | Shared key for the MCP/prompt endpoints; empty disables key auth |
 | `NUXT_PUBLIC_SITE_URL` | – | Canonical site URL for sitemap / `<link rel="canonical">` |
 
 ## Setup

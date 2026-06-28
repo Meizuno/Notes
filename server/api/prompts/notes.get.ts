@@ -50,8 +50,8 @@ const leafName = (path: string): string => {
 }
 
 export default defineEventHandler(async (event) => {
-  // Viewer scope for every query below: the session user, an API-key
-  // call's x-user-id, or null (PUBLIC only). Throws if unauthenticated.
+  // Viewer scope for every query below: the authenticated user resolved by
+  // the middleware (Bearer token or session). Throws if unauthenticated.
   const viewer = promptViewerId(event)
   const db = getPrisma()
 

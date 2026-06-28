@@ -14,11 +14,11 @@ import {
   updateNoteScoped
 } from '../notes'
 
-// MCP tools for the shared notes vault. The MCP endpoint requires
-// auth (session cookie or trusted-service API key + x-user-id), so
-// every tool here runs in the context of a specific user — `userId`
-// is the creator stamp on create, and is the boundary used to
-// preserve PRIVATE-tier isolation on update.
+// MCP tools for the shared notes vault. The MCP endpoint requires auth
+// (the middleware-resolved principal — Bearer token or session cookie), so
+// every tool here runs in the context of a specific user — `userId` is the
+// creator stamp on create, and is the boundary used to preserve PRIVATE-tier
+// isolation on update.
 //
 // Tools:
 //   list_notes   — search / list with snippets and metadata
