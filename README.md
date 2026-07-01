@@ -1,5 +1,10 @@
 # Notes
 
+<p align="center">
+  <img src="preview/demo.gif" alt="Notes demo — knowledge graph" width="760"><br>
+  <sub>▶ <a href="preview/demo.mp4">full-resolution MP4</a></sub>
+</p>
+
 A self-hosted notes vault — a shared workspace where any authenticated user can
 read, create, edit, and delete notes, except `PRIVATE` notes which are visible
 and editable only to their creator. Notes are grouped into implicit folders
