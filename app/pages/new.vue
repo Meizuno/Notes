@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const { createNote } = useNotesApi()
+const { refreshVault } = useVault()
 const { title, folder, description, content, visibility, isShared, toCreateInput } = useNoteForm()
 
 // Pre-fill from query params:
@@ -16,6 +17,8 @@ async function save() {
   saving.value = true
   try {
     const note = await createNote(toCreateInput())
+    // Surface the new note in the cached sidebar tree + home graph.
+    await refreshVault()
     await navigateTo(`/${note.slug}`)
   }
   finally { saving.value = false }

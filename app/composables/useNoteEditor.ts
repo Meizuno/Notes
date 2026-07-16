@@ -8,6 +8,7 @@ export function useNoteEditor(id: string) {
   const { title, folder, description, content, visibility, isShared, populate, toUpdateInput } = useNoteForm()
   const notesApi = useNotesApi()
   const { confirm } = useConfirm()
+  const { refreshVault } = useVault()
 
   const editing = ref(false)
   const saving = ref(false)
@@ -31,6 +32,8 @@ export function useNoteEditor(id: string) {
     try {
       const updated = await notesApi.updateNote(id, toUpdateInput())
       editing.value = false
+      // Title / folder / visibility may have changed — refresh the vault views.
+      await refreshVault()
       return updated
     }
     finally { saving.value = false }
@@ -44,6 +47,8 @@ export function useNoteEditor(id: string) {
     })
     if (!ok) return
     await notesApi.deleteNote(id)
+    // Drop the note from the cached sidebar tree + home graph before leaving.
+    await refreshVault()
     await navigateTo('/')
   }
 

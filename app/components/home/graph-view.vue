@@ -155,7 +155,8 @@ let simulation: Simulation<Node, Edge> | null = null
 // payload — on first paint after hydration there's no client round-
 // trip. The simulation itself still has to start client-side (it
 // needs the measured viewport), but the fetch is universal.
-const { data: graph } = await useFetch<{ nodes: Node[], edges: Edge[] }>('/api/graph')
+// Explicit key so note writes can invalidate it via useVault().refreshVault().
+const { data: graph } = await useFetch<{ nodes: Node[], edges: Edge[] }>('/api/graph', { key: 'graph' })
 
 if (graph.value) {
   nodes.value = graph.value.nodes
