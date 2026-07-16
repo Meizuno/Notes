@@ -81,6 +81,41 @@ function rotatedRefresh(headers: Headers): string {
   return ''
 }
 
+// Single-flight refresh. Refresh tokens are single-use — the auth service
+// rotates them and treats a 2nd use of the same token as reuse, revoking the
+// whole family (a surprise logout + 401). Parallel requests that all hit an
+// expired access token must therefore share ONE /refresh call, keyed by the
+// refresh token, rather than each POSTing it. (forwardRefreshedCookies only
+// dedups a single render's inner SSR fetches; this covers separate concurrent
+// requests on the same instance.) Map<old refresh token, in-flight>.
+type RefreshResult = { access: string, refresh: string } | null
+const inflightRefresh = new Map<string, Promise<RefreshResult>>()
+
+async function refreshPair(authServiceUrl: string, refreshToken: string): Promise<RefreshResult> {
+  try {
+    const res = await $fetch.raw<{ access_token: string }>(
+      `${authServiceUrl}/refresh`,
+      { method: 'POST', body: { refresh_token: refreshToken } }
+    )
+    const access = res._data?.access_token ?? ''
+    const refresh = rotatedRefresh(res.headers)
+    return access && refresh ? { access, refresh } : null
+  }
+  catch {
+    return null
+  }
+}
+
+function coalescedRefresh(authServiceUrl: string, refreshToken: string): Promise<RefreshResult> {
+  let inflight = inflightRefresh.get(refreshToken)
+  if (!inflight) {
+    inflight = refreshPair(authServiceUrl, refreshToken)
+    inflightRefresh.set(refreshToken, inflight)
+    void inflight.finally(() => inflightRefresh.delete(refreshToken))
+  }
+  return inflight
+}
+
 /**
  * Authenticate the request. Checks access token first, then tries refresh.
  * Sets event.context.user and event.context.accessToken on success.
@@ -107,38 +142,27 @@ export async function authenticate(event: H3Event): Promise<AuthUser | null> {
     return user
   }
 
-  // 2. Try refresh token
+  // 2. Try refresh token — coalesced so concurrent requests don't each
+  // POST /refresh with the same single-use token (see coalescedRefresh).
   const refreshToken = readCookie(event, REFRESH_COOKIE)
   if (!refreshToken) return null
 
-  try {
-    const config = useRuntimeConfig()
-    const res = await $fetch.raw<{ access_token: string }>(
-      `${config.authServiceUrl}/refresh`,
-      { method: 'POST', body: { refresh_token: refreshToken } }
-    )
-    const newAccess = res._data?.access_token ?? ''
-    // The rotated refresh token rides only in the auth service's Set-Cookie,
-    // never the response body — read it from there to re-issue it.
-    const newRefresh = rotatedRefresh(res.headers)
-    if (!newAccess || !newRefresh) return null
+  const config = useRuntimeConfig()
+  const pair = await coalescedRefresh(config.authServiceUrl, refreshToken)
+  if (!pair) return null
 
-    setAuthCookies(event, newAccess, newRefresh)
-    // Rewrite this request's cookie header so SSR inner fetches forward the
-    // fresh pair instead of the stale (rotated-away) one the browser sent.
-    forwardRefreshedCookies(event, newAccess, newRefresh)
+  setAuthCookies(event, pair.access, pair.refresh)
+  // Rewrite this request's cookie header so SSR inner fetches forward the
+  // fresh pair instead of the stale (rotated-away) one the browser sent.
+  forwardRefreshedCookies(event, pair.access, pair.refresh)
 
-    const newUserId = await validateToken(newAccess)
-    if (!newUserId) return null
+  const newUserId = await validateToken(pair.access)
+  if (!newUserId) return null
 
-    const user: AuthUser = { id: newUserId }
-    event.context.user = user
-    event.context.accessToken = newAccess
-    return user
-  }
-  catch {
-    return null
-  }
+  const user: AuthUser = { id: newUserId }
+  event.context.user = user
+  event.context.accessToken = pair.access
+  return user
 }
 
 /** Require authenticated user or throw 401 */
