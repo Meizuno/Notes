@@ -1,0 +1,14 @@
+.git
+**/node_modules
+client/dist
+.env
+preview/
+dev/
+
+# What the Python tooling leaves behind: none of it belongs in the image.
+**/__pycache__
+**/*.py[cod]
+server/.venv
+server/.mypy_cache
+server/.pytest_cache
+server/.ruff_cache

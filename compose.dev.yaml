@@ -1,0 +1,61 @@
+# Development stack: Postgres, the Python server with --reload, and the Vite client.
+#
+#   docker compose -f compose.dev.yaml up -d
+#   docker compose -f compose.dev.yaml exec server pytest -q
+#
+# Behind code-server: DEV_BASE=/absproxy/5173/ (and the HMR variables below), then
+# open https://code.<domain>/absproxy/5173/. No Google credentials in dev: the login
+# page offers a dev sign-in for any of the allowed e-mails below.
+name: notes-dev
+
+services:
+  pg:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: notes, POSTGRES_PASSWORD: notes, POSTGRES_DB: notes }
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./dev/create-test-db.sh:/docker-entrypoint-initdb.d/10-test-db.sh:ro
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "notes"], interval: 2s, retries: 30 }
+    restart: unless-stopped
+
+  server:
+    image: python:3.12-slim
+    working_dir: /app/server
+    command: sh -c "pip install -e '.[dev]' && exec uvicorn notes.shared.api.main:create_app --factory --host 0.0.0.0 --port 8000 --reload --reload-dir notes"
+    environment:
+      NOTES_DATABASE_URL: postgresql://notes:notes@pg:5432/notes
+      TEST_DATABASE_URL: postgresql://notes:notes@pg:5432/notes_test
+      NOTES_JWT_SECRET: dev-only-secret-not-for-production-use-0123456789
+      NOTES_DEV_LOGIN: "true"
+      NOTES_ALLOWED_EMAILS: dev@example.com,alice@example.com,bob@example.com
+      RUN_MIGRATIONS: "true"
+      PORT: "8000"
+    volumes:
+      - .:/app
+      - pipcache:/root/.cache/pip
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      pg: { condition: service_healthy }
+    restart: unless-stopped
+
+  client:
+    image: node:22
+    working_dir: /app/client
+    command: sh -c "corepack enable && pnpm install --store-dir /pnpm-store && exec pnpm dev --host 0.0.0.0"
+    environment:
+      DEV_BASE: ${DEV_BASE:-/}
+      DEV_ALLOWED_HOSTS: ${DEV_ALLOWED_HOSTS:-}
+      DEV_HMR_CLIENT_PORT: ${DEV_HMR_CLIENT_PORT:-}
+      DEV_HMR_PROTOCOL: ${DEV_HMR_PROTOCOL:-}
+      DEV_API_TARGET: http://server:8000
+    volumes:
+      - .:/app
+      - pnpmstore:/pnpm-store
+    ports: ["127.0.0.1:5173:5173"]
+    depends_on: [server]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pipcache:
+  pnpmstore:

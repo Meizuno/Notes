@@ -1,10 +1,19 @@
+# Client
 node_modules
-*.log*
-.nuxt
-.nuxtrc
-.nitro
-.cache
-.output
-.env
 dist
+client/node_modules/.nuxt-ui
+
+# Server: what Python and its tools leave behind
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Local configuration
+.env
+*.log*
 .DS_Store
+.cache

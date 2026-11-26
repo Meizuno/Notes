@@ -1,0 +1,87 @@
+name: Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: notes
+          POSTGRES_PASSWORD: notes
+          POSTGRES_DB: notes_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notes -d notes_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: server/pyproject.toml
+
+      - name: Install
+        working-directory: server
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        working-directory: server
+        run: ruff check notes scripts tests
+
+      - name: Type-check
+        working-directory: server
+        run: mypy notes scripts tests
+
+      - name: Test
+        working-directory: server
+        env:
+          TEST_DATABASE_URL: postgresql://notes:notes@localhost:5432/notes_test
+        run: pytest -q -W error
+
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install
+        working-directory: client
+        run: pnpm install --frozen-lockfile
+
+      # The build first: the @nuxt/ui Vite plugin writes the component prop types
+      # (node_modules/.nuxt-ui) that the type-check then reads.
+      - name: Build
+        working-directory: client
+        run: pnpm build
+
+      - name: Typecheck
+        working-directory: client
+        run: pnpm typecheck
+
+      - name: Test
+        working-directory: client
+        run: pnpm test
