@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notes"
+version = "0.1.0"
+description = "Notes — a shared markdown vault"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "asyncpg>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "orjson>=3.10.0",
+    "structlog>=24.4.0",
+    "httpx>=0.28.0",
+    "pyjwt>=2.10.0",
+    # The search-engine copy of a public note: markdown to HTML, then cleaned.
+    "markdown-it-py>=3.0.0",
+    "nh3>=0.2.18",
+    # Pinned to the major: 2.x rebuilt the low-level server API (handlers are
+    # constructor arguments, the HTTP request rides on the handler context),
+    # and notes/mcp is written against exactly that.
+    "mcp>=2.3,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["notes*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# scripts/ holds the operator tools — the seed and the SSO import. They are
+# not part of the package (packages.find takes notes* only) and they are
+# still code worth testing.
+pythonpath = ["scripts"]
+asyncio_mode = "auto"
+# One event loop for the whole run, so a pool can outlive a single test.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+# Forma's families: pycodestyle, Pyflakes, isort, bugbear, comprehensions,
+# pyupgrade, simplify, bandit (S), pytest-style and ruff's own. RUF001/2/3
+# keep identifiers and comments in English.
+select = ["E", "W", "F", "I", "B", "C4", "UP", "SIM", "S", "PT", "RUF"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "S311", "PT011", "S608"]
+# The repositories build their statements from constant column lists and the
+# WHERE builder's fragments (vault/repositories.py), which is what keeps the
+# visibility rule in one place. Every value goes as a $n parameter; nothing a
+# caller sent is ever spliced into the text — which is what S608 is about.
+"notes/*/repositories.py" = ["S608"]
+# A transliteration table and its tests are made of Cyrillic, Greek and
+# Armenian letters that look like Latin ones — which is the whole point of
+# them, so RUF001's "did you mean a Latin letter" is exactly backwards here.
+"notes/vault/transliteration.py" = ["RUF001", "E501"]
+"tests/vault/test_slugs.py" = ["RUF001"]
+"scripts/seed.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# asyncpg ships no py.typed, so its names resolve to Any. That is the trade
+# for driving Postgres directly instead of through an ORM.
+module = ["asyncpg.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false

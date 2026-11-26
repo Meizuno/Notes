@@ -5,116 +5,97 @@
   <sub>▶ <a href="preview/demo.mp4">full-resolution MP4</a></sub>
 </p>
 
-A self-hosted notes vault — a shared workspace where any authenticated user can
-read, create, edit, and delete notes, except `PRIVATE` notes which are visible
-and editable only to their creator. Notes are grouped into implicit folders
-(slash-separated paths) and browsable as a force-directed graph or a folder
-tree. Each note has a visibility tier (`PRIVATE` / `PROTECTED` / `PUBLIC`) that
-gates read access (and, for `PRIVATE`, write access too); public notes are
-SSR-rendered for search engines. The visibility filter and the scoped note
-CRUD live in one place (`server/utils/notes.ts`), shared by the HTTP API, the
-MCP tools, and the prompt endpoints.
+A self-hosted notes vault: a shared workspace where the people allowed in can
+read, create, edit and delete notes.
 
-## Inspiration
+- **`PRIVATE` notes** are visible and editable only to whoever wrote them.
+- **Folders** are implicit: notes carry slash-separated paths.
+- **Browsing** is a force-directed graph or a folder tree.
+- **Visibility** is per note: `PRIVATE`, `PROTECTED` or `PUBLIC`. A note can
+  also be shared by link.
+- **Public notes** are pre-rendered for search engines.
+- **ai-chat** reads and writes the vault through an MCP endpoint, with a
+  personal API token.
 
-The note-taking experience is inspired by **[Obsidian](https://obsidian.md)** —
-a Markdown vault grouped into folders, with a force-directed graph linking notes
-to their folders. The difference is the deployment model: where Obsidian is a
-local-first, single-user desktop app, this is a **web, self-hosted, multi-user**
-take — a shared vault with per-note visibility tiers and link sharing, rendered
-server-side so public notes are crawlable.
+The note-taking experience is inspired by **[Obsidian](https://obsidian.md)**.
+Where Obsidian is a local-first, single-user desktop app, this is a web,
+self-hosted, multi-user take on it.
 
 ## Stack
 
-- **[Nuxt 4](https://nuxt.com)** (Vue 3, `<script setup>`) + **Nitro** server
-- **Prisma 6** + **PostgreSQL** (with the `pg_trgm` extension for search)
-- **[@nuxt/ui](https://ui.nuxt.com)** + **[@nuxtjs/mdc](https://github.com/nuxt-modules/mdc)** for Markdown rendering
-- **zod** for request validation, **Vitest** for tests, **pnpm** as the package manager
-- Auth is **delegated to an external auth service** — this app validates and
-  refreshes tokens, it does not issue them.
+- **Server:** Python 3.12, FastAPI, asyncpg (raw SQL), pydantic, structlog.
+  - The official MCP SDK serves `/api/mcp`.
+  - markdown-it and nh3 do the sanitized pre-render for crawlers.
+- **Client:** Vue 3, Vite, TypeScript, [@nuxt/ui](https://ui.nuxt.com) v4
+  (through its Vite plugin), Tailwind v4.
+  - marked and DOMPurify render Markdown, and shiki highlights code.
+  - d3-force draws the graph.
+- **Database:** PostgreSQL with `pg_trgm` for search.
+- **Sign-in:** Google, limited to an allow-list of e-mails.
 
-The architecture (thin handlers → zod boundary → service layer → Prisma, with a
-typed domain-error taxonomy and fail-fast env validation) is documented for
-contributors and AI agents in **[CLAUDE.md](CLAUDE.md)**.
+The client is built to static files and served by the server, so one image
+runs it all. Architecture and conventions are in [CLAUDE.md](CLAUDE.md) and
+[server/AGENTS.md](server/AGENTS.md).
 
-## Prerequisites
+## Configuration
 
-- **Node 22+** and **pnpm** (see `packageManager` in `package.json`)
-- A **PostgreSQL** database with the `pg_trgm` extension available
-- A reachable **auth service** exposing `/validate` and `/refresh`
-
-## Environment
-
-Configure via `NUXT_`-prefixed env vars (mapped to `runtimeConfig`). Required env
-is validated at startup — the server **exits** if it's missing or invalid
-(`server/plugins/validate-env.ts`).
+Environment variables. The server refuses to start without the required ones.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `NUXT_DATABASE_URL` | ✅ | Postgres connection string |
-| `NUXT_AUTH_SERVICE_URL` | ✅ | Base URL of the external auth service |
-| `NUXT_COOKIE_DOMAIN` | – | Parent domain for the shared auth cookies (e.g. `.meizuno.com`) so one sign-in spans every `*.meizuno.com` app; empty → host-only cookies (dev) |
-| `NUXT_PUBLIC_SITE_URL` | – | Canonical site URL for sitemap / `<link rel="canonical">` |
+| `NOTES_DATABASE_URL` | ✅ | Postgres connection string |
+| `NOTES_JWT_SECRET` | ✅ in the image | Signs session tokens (≥ 32 characters). Rotating it signs everyone out. |
+| `NOTES_ALLOWED_EMAILS` | ✅ to let anyone in | Comma-separated e-mails that may sign in. Empty lets nobody in. |
+| `NOTES_GOOGLE_CLIENT_ID` | – | Google OAuth client |
+| `NOTES_GOOGLE_CLIENT_SECRET` | – | Google OAuth client |
+| `NOTES_GOOGLE_REDIRECT_URL` | – | e.g. `https://notes.meizuno.com/api/auth/callback`. Must be registered on the client. All three Google variables or none. |
+| `NOTES_SITE_URL` | – | Canonical URL for the sitemap, `<link rel="canonical">` and og tags |
+| `NOTES_DEV_LOGIN` | – | Development only: a sign-in without Google. Refused in the image. |
+| `PORT` | – | 8080 in the image |
 
-## Setup
+## Development
+
+Everything runs in containers; the host needs only Docker.
 
 ```sh
-pnpm install                 # also runs: nuxt prepare && prisma generate
-pnpm run prisma:migrate      # apply migrations (dev)
-pnpm run prisma:seed         # optional: seed sample data
-pnpm run dev                 # http://localhost:3000
+docker compose -f compose.dev.yaml up -d
+docker compose -f compose.dev.yaml exec server python scripts/seed.py   # optional sample notes
 ```
 
-## Scripts
+The client is at http://localhost:5173 and the API at http://localhost:8000.
+Sign in with the dev sign-in on the login page (`dev@example.com`, alice or
+bob); no Google credentials are needed. Behind code-server, see
+[CLAUDE.md](CLAUDE.md#development).
 
 | Task | Command |
 |---|---|
-| Dev server | `pnpm run dev` |
-| Build | `pnpm run build` |
-| Preview prod build | `pnpm run preview` |
-| Typecheck | `pnpm run typecheck` (`nuxt typecheck`) |
-| Lint | `pnpm run lint` (`eslint .`) |
-| Test | `pnpm run test` · watch: `pnpm run test:watch` |
-| Prisma generate | `pnpm run prisma:generate` |
-| Prisma migrate (dev) | `pnpm run prisma:migrate` |
-| Seed DB | `pnpm run prisma:seed` |
-
-`typecheck`, `lint`, and `test` are the verification gate — keep all three green
-before committing. CI runs the same three on every push and pull request.
-
-## Project structure
-
-```
-app/         CLIENT — pages (thin), components (dumb), composables (use-cases)
-server/
-  api/       thin HTTP handlers (parse → validate → service → return)
-  services/  business logic (server/services/notes.ts)
-  utils/     auto-imported helpers — db client, auth, data access, error taxonomy
-  middleware/ auth gate, request logging (requestId + structured logs)
-  plugins/   startup hooks (env validation)
-  routes/    non-API routes (robots.txt, sitemap.xml)
-shared/      cross-cutting zod schemas + types (#shared), client + server
-prisma/      schema, migrations, seed
-test/        mirrors source (test/server/**, test/shared/**)
-```
-
-## Testing
-
-Vitest with `@nuxt/test-utils`. Tests default to a node environment; opt into the
-Nuxt runtime per-file with `// @vitest-environment nuxt`. Service tests run
-against a mocked Prisma client and a fake `event.context` — no HTTP, no database.
-
-```sh
-pnpm run test
-```
+| Server gate (ruff, mypy, pytest) | `docker compose -f compose.dev.yaml exec server make verify` |
+| Client gate | `docker compose -f compose.dev.yaml exec client sh -c 'pnpm build && pnpm typecheck && pnpm test'` |
+| Server logs | `docker compose -f compose.dev.yaml logs -f server` |
+| Production image | `docker build -t notes .` |
 
 ## Deployment
 
-CI ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)):
+A push to `main` does four things (see `.github/workflows/deploy.yml`):
+1. runs both gates;
+2. builds `ghcr.io/meizuno/notes`;
+3. pushes it;
+4. rolls it out with zero downtime on the stack in the infra repo.
 
-1. **verify** — typecheck + lint + test (every push and PR).
-2. **build-and-push** — builds the Docker image and pushes it to GHCR (main / tags only).
-3. **deploy** — pulls the image and restarts the service on the VPS via Compose.
+Migrations run when the server starts. `/health` (and `/api/health`) answer
+503 while `/tmp/drain` exists, which is what the rollout's pre-stop hook
+relies on.
 
-The container runs `prisma migrate deploy` on start, then serves the Nitro
-build. A `/api/health` endpoint backs the Docker healthcheck.
+### Moving from the central SSO
+
+Earlier versions signed people in through the central auth service. A note's
+owner is still the user id that service gave them. Before anyone signs in to
+this version, import those users once, keeping their ids, so every `PRIVATE`
+note keeps its owner:
+
+```sh
+docker compose exec notes python scripts/import_sso_users.py \
+  postgres://…/authentication --dry-run   # check, then run without --dry-run
+```
+
+It lists any conflicts, and any `PRIVATE`-note owner still without an account.

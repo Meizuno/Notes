@@ -57,7 +57,7 @@ feat/note-editor-composable
 fix/note-visibility-filter
 fix/auth-token-refresh
 refactor/extract-note-visibility-where
-chore/bump-nuxt-4.0.1
+chore/bump-fastapi-0.120
 ci/pin-pnpm-version
 ```
 
@@ -192,7 +192,7 @@ git push origin --delete feat/<name>
 - Branch's individual commits land on main as-is
 - Main stays linear (no merge-commit)
 
-**Use when:** the branch's commits are **individually meaningful and atomic** (each one passes `pnpm run typecheck && pnpm run test`, each one has a real Conventional-Commit message). This is **the goal** of disciplined branch work — and exactly what `/git-commit` produces.
+**Use when:** the branch's commits are **individually meaningful and atomic** (each one passes both gates (see `/verify`), each one has a real Conventional-Commit message). This is **the goal** of disciplined branch work — and exactly what `/git-commit` produces.
 
 ### 3. Merge commit (avoid in this project)
 
@@ -215,9 +215,8 @@ gh pr create --title "<type>(<scope>): <subject>" --body "$(cat <<'EOF'
 - <bullet>
 
 ## Test plan
-- [ ] `pnpm run typecheck` is clean
-- [ ] `pnpm run lint` reports no problems
-- [ ] `pnpm run test` passes
+- [ ] the server gate is clean (`make verify` in the server container)
+- [ ] the client gate is clean (`pnpm build && pnpm typecheck && pnpm test`)
 - [ ] Manual: <describe>
 
 Co-Authored-By: Claude <noreply@anthropic.com>
