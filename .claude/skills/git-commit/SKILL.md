@@ -88,7 +88,7 @@ If unstaged changes exist alongside staged ones, mention this — the human may 
 | `perf` | Performance improvement | patch |
 | `docs` | Documentation only (README, comments) | – |
 | `test` | Adding/fixing tests, no production change | – |
-| `build` | Build system, dependencies (`package.json`, `pnpm-lock.yaml`) | – |
+| `build` | Build system, dependencies (`pyproject.toml`, `client/package.json`, `pnpm-lock.yaml`, `Dockerfile`) | – |
 | `ci` | CI configs (`.github/workflows/`) | – |
 | `chore` | Maintenance not fitting elsewhere (gitignore, formatting tools) | – |
 | `style` | Whitespace, formatting (rare — usually folded into other commits) | – |
@@ -122,7 +122,7 @@ Rules (non-negotiable):
 |---|---|
 | `feat: update` | `feat(note): add visibility filter on list` |
 | `fix: bug` | `fix(note): prevent edit of others' private notes` |
-| `chore: stuff` | `chore(deps): bump nuxt to 4.0.1` |
+| `chore: stuff` | `chore(deps): bump fastapi to 0.120` |
 | `feat(note): Added the ability to delete notes.` | `feat(note): add delete-note service` |
 
 ### Step 4 — Write `<body>` (optional, keep it laconic)
@@ -186,12 +186,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 Before writing the commit:
 
 ```sh
-pnpm run typecheck     # vue-tsc — must be clean
-pnpm run lint          # eslint — must be clean
-pnpm run test          # vitest — must pass
+docker compose -f compose.dev.yaml exec server make verify    # ruff · mypy · pytest — must be clean
+docker compose -f compose.dev.yaml exec client sh -c 'pnpm build && pnpm typecheck && pnpm test'
 ```
 
-All three must pass. If any fails, **do not commit** — fix the failure first. Never use `--no-verify` to skip hooks. (These scripts exist and CI runs the same gate; for the full thorough suite use `/verify`.)
+Both must pass. If any fails, **do not commit** — fix the failure first. Never use `--no-verify` to skip hooks. (These scripts exist and CI runs the same gate; for the full thorough suite use `/verify`.)
 
 ### Step 7 — Confirm the commit, then commit
 
@@ -252,7 +251,7 @@ Did behaviour change for a user / API caller?
 └── No → look deeper:
     ├── Test files only? → test
     ├── Docs/README/comments only? → docs
-    ├── package.json / pnpm-lock.yaml / dependencies? → build
+    ├── pyproject.toml / package.json / pnpm-lock.yaml / Dockerfile? → build
     ├── .github/workflows / ci.yml? → ci
     ├── Performance optimisation (with benchmark)? → perf
     ├── Code rearranged, behaviour identical? → refactor
@@ -334,7 +333,7 @@ ci: pin pnpm to 9.12.0
 - ❌ **Never `--amend` a commit that was already pushed** — create a new commit
 - ❌ **Never run `git add .` or `git add -A`** without showing the human what will be added
 - ❌ **Never commit `.env` files, secrets, large binaries, `node_modules`, build artifacts**
-- ❌ **Never commit if `pnpm run typecheck` / `test` fails** — fix first
+- ❌ **Never commit if the server or client gate fails** — fix first
 - ❌ **Never `git push` after committing** unless the human explicitly asks
 
 ## Step 9 — After the commit (and what's next)

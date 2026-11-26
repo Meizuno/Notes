@@ -80,9 +80,8 @@ If `git log @{u}..HEAD` is empty AND an upstream exists → nothing to push, say
 Even if `/git-commit` already verified, the local commits may have come from a different tool (IDE, another terminal) that skipped verify. Running it again before push is cheap insurance.
 
 ```sh
-pnpm run typecheck     # vue-tsc
-pnpm run lint          # eslint
-pnpm run test          # vitest
+docker compose -f compose.dev.yaml exec server make verify    # ruff · mypy · pytest — must be clean
+docker compose -f compose.dev.yaml exec client sh -c 'pnpm build && pnpm typecheck && pnpm test'
 ```
 
 If any fails — **do not push**. Tell the human and stop. Pushing broken code wastes everyone's CI time and creates revert pressure. (CI runs the same `verify` job on the PR, so a local failure will fail CI too.)
@@ -233,7 +232,7 @@ Tell the human which one fits their situation. Don't choose for them.
 - ❌ **Never push from `main` / `master`** — propose the Recovery workflow above and wait for confirmation. No escape, no "if you really want to". Same rule `/git-commit` enforces on its end.
 - ❌ **Never `git push --force`** — always `--force-with-lease` when force is justified
 - ❌ **Never force-push to `main` / `master`** — even with `--force-with-lease`
-- ❌ **Never push when `pnpm run typecheck` / `test` is failing** — fix first
+- ❌ **Never push when the server or client gate is failing** — fix first
 - ❌ **Never auto-push** after committing — `/git-commit` ends on the branch; pushing is a separate, explicit step
 - ❌ **Never auto-create PRs** after pushing — surface the option, wait for the human
 - ❌ **Never `git push --no-verify`** to skip pre-push hooks — unless the human explicitly asks
@@ -253,7 +252,7 @@ fatal: no upstream configured for branch 'feat/notes-service-layer'
 → No upstream. Show commits since branching from main, run verify, push with `-u`:
 
 ```sh
-pnpm run typecheck && pnpm run lint && pnpm run test
+docker compose -f compose.dev.yaml exec server make verify && docker compose -f compose.dev.yaml exec client sh -c 'pnpm build && pnpm typecheck && pnpm test'
 git push -u origin feat/notes-service-layer
 ```
 
@@ -268,7 +267,7 @@ $ git status --short --branch
 
 ```sh
 git log @{u}..HEAD --oneline
-pnpm run typecheck && pnpm run lint && pnpm run test
+docker compose -f compose.dev.yaml exec server make verify && docker compose -f compose.dev.yaml exec client sh -c 'pnpm build && pnpm typecheck && pnpm test'
 git push
 ```
 
