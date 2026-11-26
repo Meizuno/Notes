@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Standalone display when added to the home screen (the Nuxt app's
+         nuxt.config head, tag for tag). -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Notes" />
+    <meta name="theme-color" content="#f97316" />
+
+    <!-- The head a search engine and a link preview read. The server replaces
+         everything between the two markers (its seo module): a note's title,
+         description, canonical, og: and robots tags, and the site-wide
+         og:image with its absolute URL. What is written here is the home
+         page's head — what `pnpm dev` and a page the server does not describe
+         carry. The app keeps these tags current as it navigates (lib/head.ts). -->
+    <!--notes:head-->
+    <title>Notes</title>
+    <meta
+      name="description"
+      content="A self-hosted notes vault — browse a force-directed graph or a folder tree of every public note."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="Notes" />
+    <meta property="og:description" content="A self-hosted notes vault." />
+    <meta property="og:type" content="website" />
+    <!--/notes:head-->
+
+    <!-- Follow the OS light/dark preference: set the `dark` class before first
+         paint (no flash) and keep it in sync if the system theme changes. The
+         Nuxt app's color mode did the same, with no switch in the UI. -->
+    <script>
+      (function () {
+        try {
+          var mq = matchMedia("(prefers-color-scheme: dark)");
+          var apply = function (dark) {
+            document.documentElement.classList.toggle("dark", dark);
+            document.documentElement.style.colorScheme = dark ? "dark" : "light";
+          };
+          apply(mq.matches);
+          mq.addEventListener("change", function (e) { apply(e.matches); });
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- The server writes a public note's content here, pre-rendered and
+         sanitized, so a crawler reads it without JavaScript. Vue replaces it
+         wholesale when it mounts. -->
+    <div id="app"><!--notes:app--></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

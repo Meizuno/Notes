@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    // The ported Nuxt code was written against Nuxt 4's tsconfig, which has
+    // this on; indexing an array yields `T | undefined` and is narrowed.
+    "noUncheckedIndexedAccess": true,
+    // vite.config.ts is checked too (it is in `include`), and it reads
+    // process.env; without this the config file alone cannot typecheck.
+    "types": ["node", "vite/client"],
+    // Nuxt UI's component types import their theme from `#build/ui/*`, which
+    // its Vite plugin writes to node_modules/.nuxt-ui on every dev/build run.
+    // Without these the variant props (color, size, …) type as `any`.
+    "paths": {
+      "#build/ui": ["./node_modules/.nuxt-ui/ui"],
+      "#build/ui/*": ["./node_modules/.nuxt-ui/ui/*"]
+    }
+  },
+  // The two .d.ts files are written by Nuxt UI's Vite plugin (auto-imported
+  // components and composables); including them types the <U*> components'
+  // props in templates.
+  "include": ["src", "vite.config.ts", "auto-imports.d.ts", "components.d.ts"]
+}
