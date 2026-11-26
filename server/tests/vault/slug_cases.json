@@ -1,0 +1,334 @@
+[
+ {
+  "input": "DDD Overview",
+  "slug": "ddd-overview"
+ },
+ {
+  "input": "Канонічна форма",
+  "slug": "kanonichna-forma"
+ },
+ {
+  "input": "Oběd",
+  "slug": "obed"
+ },
+ {
+  "input": "   ",
+  "slug": ""
+ },
+ {
+  "input": "😀",
+  "slug": ""
+ },
+ {
+  "input": "Вітання — публічна",
+  "slug": "vitannya-publichna"
+ },
+ {
+  "input": "Dev — приватний список",
+  "slug": "dev-privatniy-spisok"
+ },
+ {
+  "input": "Bob — чернетка за посиланням",
+  "slug": "bob-chernetka-za-posilannyam"
+ },
+ {
+  "input": "XSS probe",
+  "slug": "xss-probe"
+ },
+ {
+  "input": "TypeScript",
+  "slug": "type-script"
+ },
+ {
+  "input": "JavaScript",
+  "slug": "java-script"
+ },
+ {
+  "input": "Designing Data-Intensive Applications",
+  "slug": "designing-data-intensive-applications"
+ },
+ {
+  "input": "Notes App",
+  "slug": "notes-app"
+ },
+ {
+  "input": "Conway's Law",
+  "slug": "conways-law"
+ },
+ {
+  "input": "Conway’s Law",
+  "slug": "conways-law"
+ },
+ {
+  "input": "it's 'quoted' here",
+  "slug": "its-quoted-here"
+ },
+ {
+  "input": "Don't stop",
+  "slug": "dont-stop"
+ },
+ {
+  "input": "FOO360",
+  "slug": "foo-360"
+ },
+ {
+  "input": "APIs and APISection",
+  "slug": "apis-and-api-section"
+ },
+ {
+  "input": "Ünïcödé & Straße",
+  "slug": "uenicoede-and-strasse"
+ },
+ {
+  "input": "Привіт, світ! Їжак є ґанок",
+  "slug": "privit-svit-yizhak-ye-ganok"
+ },
+ {
+  "input": "Щука",
+  "slug": "schuka"
+ },
+ {
+  "input": "ЖЁЛТЫЙ",
+  "slug": "zh-yo-ltiy"
+ },
+ {
+  "input": "Съешь же ещё этих мягких французских булок",
+  "slug": "syesh-zhe-eschyo-etikh-myagkikh-frantsuzskikh-bulok"
+ },
+ {
+  "input": "new",
+  "slug": "new"
+ },
+ {
+  "input": "Ελληνικά",
+  "slug": "ellinika"
+ },
+ {
+  "input": "中文",
+  "slug": ""
+ },
+ {
+  "input": "日本語のノート",
+  "slug": ""
+ },
+ {
+  "input": "100% sure",
+  "slug": "100-sure"
+ },
+ {
+  "input": "a\\b",
+  "slug": "a-b"
+ },
+ {
+  "input": "foo_bar",
+  "slug": "foo-bar"
+ },
+ {
+  "input": "x—y–z",
+  "slug": "x-y-z"
+ },
+ {
+  "input": "a − b",
+  "slug": "a-b"
+ },
+ {
+  "input": "fooBAR",
+  "slug": "foo-bar"
+ },
+ {
+  "input": "iPhone 15 Pro",
+  "slug": "i-phone-15-pro"
+ },
+ {
+  "input": "HTML5 Parser",
+  "slug": "html-5-parser"
+ },
+ {
+  "input": "C++ and C#",
+  "slug": "c-and-c"
+ },
+ {
+  "input": "Łódź",
+  "slug": "lodz"
+ },
+ {
+  "input": "Øre",
+  "slug": "ore"
+ },
+ {
+  "input": "Ærø",
+  "slug": "a-ero"
+ },
+ {
+  "input": "œuvre",
+  "slug": "oeuvre"
+ },
+ {
+  "input": "Příliš žluťoučký kůň úpěl ďábelské ódy",
+  "slug": "prilis-zlutoucky-kun-upel-dabelske-ody"
+ },
+ {
+  "input": "Zażółć gęślą jaźń",
+  "slug": "zazolc-gesla-jazn"
+ },
+ {
+  "input": "Tiếng Việt có dấu",
+  "slug": "tieng-viet-co-dau"
+ },
+ {
+  "input": "Hà Nội",
+  "slug": "ha-noi"
+ },
+ {
+  "input": "Հայաստան",
+  "slug": "hayastan"
+ },
+ {
+  "input": "ქართული",
+  "slug": "qartuli"
+ },
+ {
+  "input": "مرحبا بالعالم",
+  "slug": "mrhba-balealm"
+ },
+ {
+  "input": "سلام دنیا",
+  "slug": "slam-dnya"
+ },
+ {
+  "input": "Ştefan Ţară",
+  "slug": "stefan-tara"
+ },
+ {
+  "input": "Çağrı İstanbul Iğdır",
+  "slug": "cagri-istanbul-igdir"
+ },
+ {
+  "input": "Ðorđe",
+  "slug": "dorde"
+ },
+ {
+  "input": "Āboliņš",
+  "slug": "abolins"
+ },
+ {
+  "input": "Šiauliai",
+  "slug": "siauliai"
+ },
+ {
+  "input": "Ѓорѓе Ќерка",
+  "slug": "or-e-kjerka"
+ },
+ {
+  "input": "Unicorn 🦄 love ♥",
+  "slug": "unicorn-unicorn-love-love"
+ },
+ {
+  "input": "R&D",
+  "slug": "r-and-d"
+ },
+ {
+  "input": "Ąžuolas",
+  "slug": "azuolas"
+ },
+ {
+  "input": "naïve café résumé",
+  "slug": "naive-cafe-resume"
+ },
+ {
+  "input": "ﬁnancial",
+  "slug": "nancial"
+ },
+ {
+  "input": "Ⅻ",
+  "slug": ""
+ },
+ {
+  "input": "①②③",
+  "slug": "123"
+ },
+ {
+  "input": "x²",
+  "slug": "x"
+ },
+ {
+  "input": "½ cup",
+  "slug": "cup"
+ },
+ {
+  "input": "a.b.c",
+  "slug": "a-b-c"
+ },
+ {
+  "input": "---leading and trailing---",
+  "slug": "leading-and-trailing"
+ },
+ {
+  "input": "Multiple   spaces\tand\nnewlines",
+  "slug": "multiple-spaces-and-newlines"
+ },
+ {
+  "input": "ABCDef",
+  "slug": "abc-def"
+ },
+ {
+  "input": "XMLHttpRequest",
+  "slug": "xml-http-request"
+ },
+ {
+  "input": "getHTTPResponseCode",
+  "slug": "get-http-response-code"
+ },
+ {
+  "input": "version2Beta",
+  "slug": "version2-beta"
+ },
+ {
+  "input": "ES2015Module",
+  "slug": "es-2015-module"
+ },
+ {
+  "input": "v1.2.3",
+  "slug": "v1-2-3"
+ },
+ {
+  "input": "Mañana",
+  "slug": "manana"
+ },
+ {
+  "input": "Đặng",
+  "slug": "dang"
+ },
+ {
+  "input": "Smörgåsbord",
+  "slug": "smoergasbord"
+ },
+ {
+  "input": "İ",
+  "slug": "i"
+ },
+ {
+  "input": "ǅemal",
+  "slug": "emal"
+ },
+ {
+  "input": "Straße",
+  "slug": "strasse"
+ },
+ {
+  "input": "ŒUVRE",
+  "slug": "oeuvre"
+ },
+ {
+  "input": "Ĳssel",
+  "slug": "ijssel"
+ },
+ {
+  "input": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word ",
+  "slug": "word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word"
+ },
+ {
+  "input": "Дуже довга назва нотатки яка має бути обрізана до вісімдесяти символів без дефісу в кінці",
+  "slug": "duzhe-dovga-nazva-notatki-yaka-maye-buti-obrizana-do-visimdesyati-simvoliv-bez-defisu-v-kintsi"
+ }
+]
