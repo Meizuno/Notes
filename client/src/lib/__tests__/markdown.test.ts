@@ -407,3 +407,13 @@ describe("ticking a task", () => {
     expect(boxes.map((b) => b.checked)).toEqual([true, false, true]);
   });
 });
+
+describe("lexMarkdownLines", () => {
+  it("gives each drawn block the source line it starts on", async () => {
+    const { lexMarkdownLines } = await import("../markdown");
+    const src = "# Title\n\nFirst paragraph\nstill first.\n\n- a\n- b\n\n```ts\nx\n```\n\n[ref]: https://x.y\n\nLast";
+    const { tokens, lines } = lexMarkdownLines(src);
+    expect(tokens.map((t) => t.type)).toEqual(["heading", "paragraph", "list", "code", "paragraph"]);
+    expect(lines).toEqual([0, 2, 5, 8, 14]);
+  });
+});

@@ -72,6 +72,10 @@ function assignHeadingIds(tokens: Token[]) {
  * that draw something.
  */
 export function lexMarkdown(src: string): Token[] {
+  return lexAll(src).filter(draws);
+}
+
+function lexAll(src: string): Token[] {
   let tokens: Token[];
   try {
     tokens = Lexer.lex(src, OPTIONS);
@@ -79,7 +83,35 @@ export function lexMarkdown(src: string): Token[] {
     tokens = [{ type: "paragraph", raw: src, text: src, tokens: [{ type: "text", raw: src, text: src }] } as Token];
   }
   assignHeadingIds(tokens);
-  return tokens.filter((t) => t.type !== "space" && t.type !== "def");
+  return tokens;
+}
+
+const draws = (t: Token) => t.type !== "space" && t.type !== "def";
+
+/**
+ * The blocks lexMarkdown gives, each with the source line (0-based) it starts
+ * on — what lets the editor's preview scroll along with the text. Each block's
+ * `raw` is found in the source from where the last one ended, so a block whose
+ * raw the lexer normalised falls back to where the previous one stopped.
+ */
+export function lexMarkdownLines(src: string): { tokens: Token[]; lines: number[] } {
+  const tokens: Token[] = [];
+  const lines: number[] = [];
+  let cursor = 0;
+  let counted = 0;
+  let line = 0;
+  for (const t of lexAll(src)) {
+    const at = t.raw ? src.indexOf(t.raw, cursor) : -1;
+    const start = at === -1 ? cursor : at;
+    for (let i = counted; i < start; i++) if (src.charCodeAt(i) === 10) line++;
+    counted = Math.max(counted, start);
+    if (draws(t)) {
+      tokens.push(t);
+      lines.push(line);
+    }
+    cursor = start + (t.raw?.length ?? 0);
+  }
+  return { tokens, lines };
 }
 
 /** Every fenced block's info string — what the highlighter has to load for. */
@@ -191,6 +223,18 @@ export function renderTokens(tokens: Token[], opts: RenderOptions = {}): string 
   const host = document.createElement("div");
   host.append(fragment);
   return host.innerHTML;
+}
+
+/**
+ * Each block rendered on its own inside `<div data-line="N">`, N the source
+ * line it starts on: the editor's preview, which scrolls with the text by
+ * those lines. The wrappers carry no box, so margins collapse through them
+ * and the page reads as one render.
+ */
+export function renderTokensWithLines(tokens: Token[], lines: number[], opts: RenderOptions = {}): string {
+  return tokens
+    .map((t, i) => `<div data-line="${Math.trunc(lines[i] ?? 0)}">${renderTokens([t], opts)}</div>`)
+    .join("");
 }
 
 /** Markdown source straight to HTML — the editor's preview. */

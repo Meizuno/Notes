@@ -4,6 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, wa
 
 import { useImagePaste, type TextareaHost } from "../composables/useImagePaste";
 import { useMarkdownFormatter } from "../composables/useMarkdownFormatter";
+import { useScrollSync } from "../composables/useScrollSync";
 import { useVault } from "../composables/useVault";
 import { applyMarkdown, type MarkdownAction } from "../lib/markdown-edit";
 import type { Visibility } from "../lib/types";
@@ -68,6 +69,14 @@ watch(content, (value) => {
   }, 150);
 });
 onBeforeUnmount(() => clearTimeout(previewTimer));
+
+// Side by side, the preview scrolls with the text and has no scroll of its own.
+const previewPane = useTemplateRef<HTMLElement>("previewPane");
+const { active: scrollSynced } = useScrollSync({
+  editor: () => textareaEl(),
+  pane: previewPane,
+  text: displayContent,
+});
 
 // ── the toolbar ─────────────────────────────────────────────────────────────
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -206,7 +215,7 @@ function onSubmit() {
 
 <template>
   <form
-    class="flex flex-col gap-3 lg:h-[calc(100dvh-var(--app-header)-3rem)]"
+    class="flex flex-col gap-3 lg:h-[calc(100dvh-var(--app-header)-4rem)]"
     @submit.prevent="onSubmit"
     @keydown="onKeydown"
   >
@@ -323,15 +332,24 @@ function onSubmit() {
             aria-label="Content"
             variant="none"
             class="h-full w-full [&>div]:h-full"
-            :ui="{ base: 'h-full min-h-[50dvh] resize-none px-4 py-4 font-mono text-sm leading-relaxed sm:px-5 lg:min-h-0' }"
+            :ui="{
+              base: 'h-full min-h-[50dvh] resize-none overscroll-contain px-4 py-4 font-mono text-sm leading-relaxed sm:px-5 lg:min-h-0',
+            }"
           />
         </div>
-        <div class="min-h-0 overflow-y-auto px-5 py-4 sm:px-7" :class="mode === 'edit' ? 'hidden lg:block' : ''">
-          <p class="mb-2 text-[0.7rem] font-extrabold uppercase tracking-wider text-dimmed">Preview</p>
-          <div v-if="previewSource.trim()" class="prose max-w-none text-default">
-            <MarkdownPreview :value="previewSource" />
+        <div
+          ref="previewPane"
+          class="relative min-h-0 px-5 py-4 sm:px-7"
+          :class="[mode === 'edit' ? 'hidden lg:block' : '', scrollSynced ? 'overflow-hidden' : 'overflow-y-auto']"
+        >
+          <!-- One child, so its size tells the scroll sync the render moved. -->
+          <div>
+            <p class="mb-2 text-[0.7rem] font-extrabold uppercase tracking-wider text-dimmed">Preview</p>
+            <div v-if="previewSource.trim()" class="prose max-w-none text-default">
+              <MarkdownPreview :value="previewSource" :lines="scrollSynced" />
+            </div>
+            <p v-else class="text-sm text-muted italic">Nothing to preview yet.</p>
           </div>
-          <p v-else class="text-sm text-muted italic">Nothing to preview yet.</p>
         </div>
       </div>
 

@@ -1,8 +1,8 @@
 # Notes
 
 <p align="center">
-  <img src="preview/demo.gif" alt="Notes demo — knowledge graph" width="760"><br>
-  <sub>▶ <a href="preview/demo.mp4">full-resolution MP4</a></sub>
+  <img src="preview/demo.gif" alt="Notes demo: the graph, search, a note, and a new note written beside its live preview" width="760"><br>
+  <sub>The graph · search · a note · writing one, with the preview scrolling along — ▶ <a href="preview/demo.mp4">full-resolution MP4</a></sub>
 </p>
 
 A self-hosted notes vault: a shared workspace where the people allowed in can
@@ -12,7 +12,8 @@ read, create, edit and delete notes.
 - **Folders** are implicit: notes carry slash-separated paths.
 - **Browsing** is a force-directed graph or a folder tree, and **search**
   across titles and text from the sidebar (`/`).
-- **Writing** is Markdown, with a formatting toolbar and a live preview beside it.
+- **Writing** is Markdown, with a formatting toolbar and a live preview beside
+  it that scrolls with the text.
 - **Visibility** is per note: `PRIVATE`, `PROTECTED` or `PUBLIC`. A note can
   also be shared by link.
 - **Public notes** are pre-rendered for search engines.
