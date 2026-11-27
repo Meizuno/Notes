@@ -39,8 +39,8 @@ class BadEmail(DomainError):
 class GoogleSignInFailed(ApplicationError):
     """Anything that stops a Google sign-in short of a session.
 
-    Reported as `/login?error=auth_failed`: the person arrives by navigation,
-    so there is no fetch waiting to read a body, and the login page has one
+    Reported as `/?auth_error=auth_failed`: the person arrives by navigation,
+    so there is no fetch waiting to read a body, and the client has one
     message for all of these. The specific reason goes to the log.
     """
 

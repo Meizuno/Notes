@@ -41,8 +41,8 @@ function query(params: ListNotesQuery): string {
  *
  * The one place to change if the server says it differently. Whatever goes
  * wrong — no such route, an error, another shape — reads as "Google only":
- * dev sign-in is a convenience for the dev stack, and a production login page
- * must never show it.
+ * dev sign-in is a convenience for the dev stack, and production must never
+ * offer it.
  */
 async function authConfig(): Promise<AuthConfig> {
   try {
@@ -59,8 +59,12 @@ export const api = {
   // Best-effort and never retried: the session is being ended either way.
   logout: () => apiFetch<{ ok: boolean }>("/api/auth/logout", { method: "POST", noRetry: true }),
   authConfig,
-  /** A top-level navigation, not a fetch: Google's round trip ends in redirects. */
-  googleSignInUrl: () => withBase("/api/auth/google"),
+  /**
+   * A top-level navigation, not a fetch: Google's round trip ends in
+   * redirects, the last one to `back` (an app path; the server refuses
+   * anything that is not local).
+   */
+  googleSignInUrl: (back = "/") => withBase(`/api/auth/google?return=${encodeURIComponent(back)}`),
   /**
    * Dev sign-in (NOTES_DEV_LOGIN only): answers like /api/auth/me with the
    * session cookies set. 403 `not_allowed` for an address off the allow-list,

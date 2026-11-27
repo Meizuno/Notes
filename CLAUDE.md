@@ -74,9 +74,10 @@ docker compose -f compose.dev.yaml exec server python scripts/seed.py   # 15 sam
 - **Behind code-server**, start it with
   `DEV_BASE=/absproxy/5173/ DEV_ALLOWED_HOSTS=code.meizuno.com DEV_HMR_CLIENT_PORT=443 DEV_HMR_PROTOCOL=wss`
   and open `https://code.meizuno.com/absproxy/5173/`.
-- **Signing in in dev needs no Google.** The login page offers a dev sign-in for
-  `dev@`, `alice@` or `bob@example.com` (`NOTES_DEV_LOGIN`, which the image
-  refuses).
+- **Signing in in dev needs no Google.** There is no sign-in page: "Log in"
+  goes straight to Google, except where the server offers only the dev
+  sign-in. There it opens a dialog for `dev@`, `alice@` or `bob@example.com`
+  (`NOTES_DEV_LOGIN`, which the image refuses).
 
 ## Before calling work done
 

@@ -1,4 +1,6 @@
 import secrets
+from typing import Final
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
@@ -24,6 +26,21 @@ from notes.shared.api.dependencies import get_settings
 from notes.shared.config import Settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# There is no sign-in page: signing in IS this route, a navigation that goes
+# straight to Google's consent screen and comes back to where it started.
+SIGN_IN_PATH: Final = "/api/auth/google"
+# Where a failed sign-in lands, with `?auth_error=<code>` for the client to
+# show. Never back into the sign-in itself: an address off the allow-list
+# would go round Google's account picker for ever.
+FAILED_SIGN_IN_PATH: Final = "/"
+
+
+def sign_in_location(back: str) -> str:
+    """The navigation that signs somebody in and returns them to `back` (a
+    local path, query included). Checked again on the way in, by
+    `_return_path`, so whatever builds this cannot open a redirect."""
+    return f"{SIGN_IN_PATH}?return={quote(back, safe='/')}"
 
 
 async def get_google_client(
@@ -53,11 +70,11 @@ async def start(
     google: GoogleOAuthClient | None = Depends(get_google_client),
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
-    """Sends the browser to Google's consent screen — the login page's
-    "Sign in with Google" is a plain link here."""
+    """Sends the browser to Google's consent screen. The client's "Log in",
+    /login and every page that needs a session are plain navigations here."""
     if google is None:
         get_logger().warning("google_sign_in_unconfigured")
-        return _back_to_login("auth_failed")
+        return _failed("auth_failed")
     state = secrets.token_urlsafe(24)
     response = RedirectResponse(
         google.authorization_url(state), status_code=status.HTTP_302_FOUND
@@ -83,8 +100,9 @@ async def callback(
 ) -> RedirectResponse:
     """Google's redirect target: completes the flow and lands the browser.
 
-    A failure is carried as `?error=` on /login, because the person arrives
-    here by navigation and there is no fetch waiting to read a JSON body:
+    A failure is carried as `?auth_error=` on the home page, because the
+    person arrives here by navigation and there is no fetch waiting to read a
+    JSON body:
     `not_allowed` for an address off the allow-list, `auth_failed` for
     anything else (the reason goes to the log). The try/except is that
     translation, which is why this route, alone, has one.
@@ -104,10 +122,10 @@ async def callback(
             )
         )
     except NotAllowed:
-        return _back_to_login("not_allowed")
+        return _failed("not_allowed")
     except GoogleSignInFailed as failure:
         get_logger().info("google_sign_in_failed", reason=failure.message)
-        return _back_to_login("auth_failed")
+        return _failed("auth_failed")
 
     remember(request, signed_in.tokens)
     response = RedirectResponse(back, status_code=status.HTTP_302_FOUND)
@@ -127,9 +145,9 @@ async def _exchange(request: Request, google: GoogleOAuthClient) -> GoogleProfil
     return await google.exchange(code)
 
 
-def _back_to_login(code: str) -> RedirectResponse:
+def _failed(code: str) -> RedirectResponse:
     response = RedirectResponse(
-        f"/login?error={code}", status_code=status.HTTP_302_FOUND
+        f"{FAILED_SIGN_IN_PATH}?auth_error={code}", status_code=status.HTTP_302_FOUND
     )
     _drop_oauth_cookies(response)
     return response

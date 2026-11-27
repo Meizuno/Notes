@@ -197,6 +197,13 @@ describe("the app", () => {
     expect(router.currentRoute.value.path).toBe("/");
   });
 
+  it("says why a sign-in failed, once, and takes it out of the address", async () => {
+    await router.push("/?auth_error=not_allowed");
+    await settle();
+    expect(document.body.textContent).toContain("This e-mail is not allowed here.");
+    expect(router.currentRoute.value.fullPath).toBe("/");
+  });
+
   it("answers an unknown path with the not-found page", async () => {
     await router.push("/a/b/c");
     await settle();

@@ -2,9 +2,9 @@
 // Top header strip — visible at every breakpoint. Brand on the left links to
 // the home view; the right side carries the global "new note" action and the
 // user dropdown for signed-in viewers, and a "Log in" button for anonymous
-// viewers.
+// viewers — which goes straight to Google and back to this page.
 import { computed, ref } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 
 import { useAuth } from "../composables/useAuth";
 import { useSidebar } from "../composables/useSidebar";
@@ -12,7 +12,8 @@ import { useVault } from "../composables/useVault";
 import { withBase } from "../lib/base";
 import ApiTokens from "./ApiTokens.vue";
 
-const { user, loggedIn, logout } = useAuth();
+const { user, loggedIn, logout, signIn } = useAuth();
+const route = useRoute();
 const { refreshVault } = useVault();
 
 // Toggles the navigation sidebar's off-canvas drawer on small screens (the
@@ -111,13 +112,13 @@ const userMenuItems = computed(() => [
 
         <UButton
           v-else
-          to="/login"
           icon="i-lucide-log-in"
           variant="ghost"
           color="neutral"
           size="sm"
           label="Log in"
           class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
+          @click="signIn(route.fullPath)"
         />
       </div>
     </div>

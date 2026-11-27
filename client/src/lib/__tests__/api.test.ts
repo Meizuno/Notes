@@ -67,12 +67,15 @@ describe("the API module", () => {
     expect(await api.authConfig()).toEqual({ google: true, devLogin: false });
     fetchMock.mockRejectedValueOnce(new TypeError("offline"));
     expect(await api.authConfig()).toEqual({ google: true, devLogin: false });
-    // Never a refresh for it: the login page is for whoever has no session.
+    // Never a refresh for it: signing in is for whoever has no session.
     expect(fetchMock.mock.calls.every((c) => String(c[0]) === "/api/auth/config")).toBe(true);
   });
 
   it("signs in with Google by navigating, and in dev by asking", async () => {
-    expect(api.googleSignInUrl()).toBe("/api/auth/google");
+    expect(api.googleSignInUrl()).toBe("/api/auth/google?return=%2F");
+    expect(api.googleSignInUrl("/new?title=A&folder=B/C")).toBe(
+      "/api/auth/google?return=%2Fnew%3Ftitle%3DA%26folder%3DB%2FC",
+    );
     const user = { id: "u1", email: "a+b@example.com", name: null, picture: null };
     fetchMock.mockResolvedValueOnce(json(200, { user }));
     expect(await api.devSignIn("a+b@example.com")).toEqual({ user });
