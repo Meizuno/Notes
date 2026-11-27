@@ -1,105 +1,77 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
-/* Inter, bundled with the app (one variable file per script, fetched only for
-   the scripts a page uses). The Nuxt app got it from @nuxt/fonts, which Nuxt UI
-   switches on and which resolves the `Inter` named below; Vue has no such
-   module, so the font is shipped explicitly. */
-@import "@fontsource-variable/inter";
+/* Nunito, bundled (one variable file per script, fetched only for the scripts
+   a page uses) — the font of the owner's other apps (Forma). */
+@import "@fontsource-variable/nunito";
 
-/* ───── Nord palette ──────────────────────────────────────────────
-   Arctic Ice Studio's Nord, exposed as CSS custom properties so the
-   markdown styling below — and any other component that wants a
-   Nord accent — can reference them by name instead of repeating
-   hex codes. Four groups: Polar Night (dark surfaces), Snow Storm
-   (light surfaces / fg), Frost (the iconic blues), Aurora (warm
-   accents). Source: https://www.nordtheme.com
-   ─────────────────────────────────────────────────────────────── */
+/* ───── The family look ────────────────────────────────────────────
+   Forma's shell, in Notes' own hue: a soft gradient wash behind
+   everything, white cards with a long faint shadow on it, slate text.
+   The wash leans violet → blue → rose where Forma's leans emerald →
+   blue → sand. Dark mode follows the OS (index.html sets `.dark`). */
 :root {
-  --nord-0:  #2E3440;   /* Polar Night - deepest */
-  --nord-1:  #3B4252;
-  --nord-2:  #434C5E;
-  --nord-3:  #4C566A;   /* Polar Night - lightest (muted text on dark) */
-  --nord-4:  #D8DEE9;   /* Snow Storm - foreground on dark */
-  --nord-5:  #E5E9F0;
-  --nord-6:  #ECEFF4;   /* Snow Storm - lightest bg */
-  --nord-7:  #8FBCBB;   /* Frost - teal */
-  --nord-8:  #88C0D0;   /* Frost - light blue (signature accent) */
-  --nord-9:  #81A1C1;   /* Frost - mid blue */
-  --nord-10: #5E81AC;   /* Frost - deep blue */
-  --nord-11: #BF616A;   /* Aurora - red */
-  --nord-12: #D08770;   /* Aurora - orange */
-  --nord-13: #EBCB8B;   /* Aurora - yellow */
-  --nord-14: #A3BE8C;   /* Aurora - green */
-  --nord-15: #B48EAD;   /* Aurora - purple */
-}
-
-/* App surface — Snow Storm in light mode, Polar Night in dark mode,
-   matching Obsidian's own Nord behaviour. We override Nuxt UI's
-   neutral tokens so every component (sidebar, buttons, inputs,
-   menus, etc.) follows the palette without per-component tweaks. */
-:root {
-  --ui-bg:          var(--nord-6);
-  --ui-bg-muted:    var(--nord-5);
-  --ui-bg-elevated: var(--nord-5);
-  --ui-bg-accented: var(--nord-4);
-  --ui-text:           var(--nord-0);
-  --ui-text-muted:     var(--nord-3);
-  --ui-text-toned:     var(--nord-3);
-  --ui-text-dimmed:    var(--nord-3);
-  --ui-text-highlighted: var(--nord-0);
-  --ui-border:          var(--nord-4);
-  --ui-border-muted:    var(--nord-5);
-  --ui-border-accented: var(--nord-3);
-  /* Primary = deep Frost blue. The full 50–950 ramp Nuxt UI uses for
-     hover / focus / muted states is generated from `sky` (closest
-     Tailwind palette); this override pins the canonical 500 shade
-     to Obsidian's exact Nord hex. */
-  --ui-primary:        var(--nord-10);
-  --ui-color-primary-50:  #ECEFF4;
-  --ui-color-primary-100: #D8DEE9;
-  --ui-color-primary-200: #B7C2D2;
-  --ui-color-primary-300: #97A8BC;
-  --ui-color-primary-400: #81A1C1;   /* nord-9  */
-  --ui-color-primary-500: #5E81AC;   /* nord-10 */
-  --ui-color-primary-600: #4D6E96;
-  --ui-color-primary-700: #3F5C7E;
-  --ui-color-primary-800: #344A66;
-  --ui-color-primary-900: #2A3B52;
-  --ui-color-primary-950: #1F2C3D;
+  --app-backdrop: linear-gradient(165deg, #efe9fd 0%, #edf2fb 50%, #fbeef4 100%);
+  /* What shows past an overscroll, the wash's last colour. */
+  --app-surface: #f8eef3;
+  --app-card-shadow: 0 1px 2px rgb(30 60 90 / 0.04), 0 22px 40px -28px rgb(30 60 90 / 0.4);
+  /* The sticky header, which sticky asides and full-height panes measure from. */
+  --app-header: calc(3.5rem + 1px);
+  /* The whole rem scale grows a little with the viewport, as in Forma. */
+  font-size: clamp(13.5px, 12px + 0.55vw, 17.5px);
 }
 .dark {
-  /* Slightly cooler/darker than canonical --nord-0 (#2E3440) — picked
-     from a screenshot the user supplied. Only --ui-bg is shifted; the
-     elevated / muted / accented surfaces still climb the Nord ramp so
-     contrast between layers remains correct. */
-  --ui-bg:          #2A2F3B;
-  --ui-bg-muted:    var(--nord-1);
-  --ui-bg-elevated: var(--nord-1);
-  --ui-bg-accented: var(--nord-2);
-  --ui-text:           var(--nord-6);
-  --ui-text-muted:     var(--nord-4);
-  --ui-text-toned:     var(--nord-4);
-  --ui-text-dimmed:    var(--nord-3);
-  --ui-text-highlighted: var(--nord-6);
-  --ui-border:          var(--nord-2);
-  --ui-border-muted:    var(--nord-1);
-  --ui-border-accented: var(--nord-3);
-  /* On Polar Night the deep `--nord-10` reads as muddy, so dark mode
-     uses the lighter Frost (`--nord-8`) as the primary 500 shade —
-     same call Obsidian's Nord theme makes for its accent. */
-  --ui-primary:        var(--nord-8);
-  --ui-color-primary-400: #A1CDD8;
-  --ui-color-primary-500: #88C0D0;   /* nord-8 */
-  --ui-color-primary-600: #6FA9BA;
+  --app-backdrop: linear-gradient(165deg, #130f22 0%, #0b1220 50%, #1a0f18 100%);
+  --app-surface: #120d16;
+  --app-card-shadow: none;
 }
 
-/* Inter is Obsidian's default UI font — bundled above, with the system
-   stacks behind it for the first frame. */
+html {
+  background: var(--app-surface);
+  -webkit-text-size-adjust: 100%;
+}
 html, body {
-  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
-               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: var(--ui-bg);
+  font-family: "Nunito Variable", "Nunito", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--ui-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  background: transparent;
+}
+/* Fixed, so the wash stays put while the page scrolls over it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--app-backdrop);
+  pointer-events: none;
+}
+h1, h2, h3 {
+  letter-spacing: -0.011em;
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+/* iOS zooms into a field whose text is under 16px. */
+@media (pointer: coarse) {
+  input, textarea, select {
+    font-size: max(16px, 1em);
+  }
+}
+
+@layer components {
+  /* A card that is not a UCard: the tree, the graph, a note. */
+  .surface {
+    border-radius: 1.75rem;
+    background: var(--ui-bg);
+    box-shadow: var(--app-card-shadow);
+  }
+  .dark .surface {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
 }
 
 /* GFM task list checkboxes inside markdown content. By default the
@@ -222,153 +194,6 @@ html, body {
   border-bottom-width: 0 !important;
 }
 
-/* ───── Markdown block palette ─────────────────────────────────────
-   Each block type gets a Nord accent so long notes read as a layered
-   document. Per-block comments below explain the specific hue
-   choice; the rule of thumb is "same hue in both modes, only the
-   lightness shifts to match the surface". */
-
-/* Headings — Aurora red → yellow → green → purple, then Frost light
-   → mid. Light mode uses darker variants of each hue so they read
-   against Snow Storm; dark mode uses the canonical Nord shades. */
-
-/* light */
-.prose h1 { color: #9A4047; }              /* nord-11 darkened ~22% */
-.prose h2 { color: #9F7B2C; }              /* nord-13 darkened ~32% — reads as deep amber rather than washed yellow */
-.prose h3 { color: #6F9559; }              /* nord-14 darkened ~22% */
-.prose h4 { color: #8B6582; }              /* nord-15 darkened ~22% */
-.prose h5 { color: var(--nord-10); }       /* nord-10 already dark, perfect on light */
-.prose h6 { color: #4E6B8F; }              /* nord-9 darkened ~20% */
-
-/* dark — restore the canonical Aurora/Frost on Polar Night */
-.dark .prose h1 { color: var(--nord-11); }
-.dark .prose h2 { color: var(--nord-13); }
-.dark .prose h3 { color: var(--nord-14); }
-.dark .prose h4 { color: var(--nord-15); }
-.dark .prose h5 { color: var(--nord-8);  }
-.dark .prose h6 { color: var(--nord-9);  }
-
-/* Blockquote — aurora yellow (sticky-note feel). Light mode needs a
-   stronger wash + a darker border or the whole thing disappears
-   into the snow-storm bg. */
-.prose blockquote {
-  border-left: 4px solid #C9A14B;           /* nord-13 darkened ~22% */
-  background: rgba(235, 203, 139, 0.22);    /* nord-13 / 22% on light */
-  border-radius: 0 0.5rem 0.5rem 0;
-  padding: 0.75rem 1rem;
-  font-style: normal;
-  color: inherit;
-}
-.prose blockquote :where(p):first-child { margin-top: 0; }
-.prose blockquote :where(p):last-child  { margin-bottom: 0; }
-.dark .prose blockquote {
-  border-left-color: var(--nord-13);
-  background: rgba(235, 203, 139, 0.08);
-}
-
-/* Inline code — aurora red pill. Light mode runs a deeper red on a
-   firmer wash so the pill actually has presence; dark mode's 20%
-   wash + lightened red stays. */
-.prose :where(code):not(pre code) {
-  background: rgba(191, 97, 106, 0.18);     /* nord-11 / 18% on light */
-  color: #964148;                            /* nord-11 darkened ~20% */
-  padding: 0.1em 0.4em;
-  border-radius: 0.35em;
-  font-size: 0.88em;
-  font-weight: 500;
-}
-.prose :where(code):not(pre code)::before,
-.prose :where(code):not(pre code)::after {
-  content: none;
-}
-.dark .prose :where(code):not(pre code) {
-  background: rgba(191, 97, 106, 0.2);
-  color: rgb(212 132 141);
-}
-
-/* Inside tables the aurora-red pill competes with the data for
-   attention; cells already feel busy with borders + multiple values
-   per row. Drop to a neutral surface so the code reads as "this is
-   verbatim" without screaming. */
-.prose .prose-grid-table :where(code):not(pre code) {
-  background: var(--ui-bg-muted);
-  color: var(--ui-text);
-}
-.dark .prose .prose-grid-table :where(code):not(pre code) {
-  background: var(--ui-bg-elevated);
-  color: var(--ui-text);
-}
-
-/* Code block surface — each mode gets a slightly-elevated Nord tier
-   relative to the main bg, so the block reads as a contained
-   "panel" without changing the page's overall lightness:
-     - light: nord-5 panel + nord-4 border on top of nord-6 page bg
-     - dark : polar-night nord-0 panel + soft nord-3 border on top
-       of the deeper #2A2F3B page bg.
-   Token colours come from Shiki (github-light / github-dark), so
-   the panel just frames them. */
-.prose pre {
-  background: var(--nord-5);
-  border: 1px solid var(--nord-4);
-  border-radius: 0.6rem;
-}
-.dark .prose pre {
-  background: var(--nord-0);
-  border-color: rgba(76, 86, 106, 0.4);   /* nord-3 / 40% */
-}
-
-/* List markers — deep frost for ul on light (nord-8 is too pale on
-   white), aurora purple for ol. Dark mode keeps the light frost for
-   ul so the bullet pops on Polar Night. */
-.prose :where(ul):not(.contains-task-list) > li::marker {
-  color: var(--nord-10);
-}
-.prose :where(ol) > li::marker {
-  color: #9A7693;                            /* nord-15 darkened ~15% */
-  font-weight: 600;
-}
-.dark .prose :where(ul):not(.contains-task-list) > li::marker {
-  color: var(--nord-8);
-}
-.dark .prose :where(ol) > li::marker {
-  color: var(--nord-15);
-}
-
-/* Horizontal rule — frost → aurora-purple gradient. Same colours
-   work on both backgrounds because the middle stops are saturated
-   and the ends are fully transparent. */
-.prose hr {
-  height: 2px;
-  border: 0;
-  background: linear-gradient(to right,
-    rgba(94, 129, 172, 0) 0%,
-    var(--nord-10) 30%,
-    var(--nord-15) 70%,
-    rgba(180, 142, 173, 0) 100%);
-}
-
-/* Tables — frost-tinted header text. The header background tint and
-   row zebra live with .prose-grid-table below because the grid layout collapses
-   thead/tr via `display: contents` (no box → no background), so they
-   have to paint on the cell elements directly. */
-.prose th { color: var(--nord-10); font-weight: 600; }
-.dark .prose th { color: var(--nord-8); }
-
-/* Links — deep frost on light (nord-8 looked washed against the
-   Snow Storm bg); light frost on dark. Distinct from H1 in either
-   mode so headings and inline links don't blur together. */
-.prose a {
-  color: var(--nord-10);
-  text-decoration-color: rgba(94, 129, 172, 0.4);
-  transition: color 150ms ease, text-decoration-color 150ms ease;
-}
-.prose a:hover {
-  color: #3F5C7E;                            /* nord-10 darkened — deeper indigo on hover */
-  text-decoration-color: #3F5C7E;
-}
-.dark .prose a       { color: var(--nord-8); }
-.dark .prose a:hover { color: var(--nord-7); }
-
 /* Safety net for the prose classes — they are written by
    src/lib/prose.ts into rendered markdown, which Tailwind's scanner reads
    as a plain string; listing them here guarantees they land in the bundle
@@ -415,10 +240,10 @@ html, body {
   display: contents;
 }
 .prose-grid-table > tbody > tr:nth-child(even) > * {
-  background: rgba(76, 86, 106, 0.06);     /* nord-3 / 6%  — light */
+  background: rgb(100 116 139 / 0.06);     /* slate-500 / 6%  — light */
 }
 .dark .prose-grid-table > tbody > tr:nth-child(even) > * {
-  background: rgba(76, 86, 106, 0.12);     /* nord-3 / 12% — dark */
+  background: rgb(148 163 184 / 0.06);     /* slate-400 / 6% — dark */
 }
 
 /* ───── Code blocks: Shiki's two themes ─────────────────────────────

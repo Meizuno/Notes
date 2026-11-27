@@ -10,6 +10,9 @@ import { signIn, useAuth } from "./composables/useAuth";
 // Each page is its own chunk, as Nuxt split them.
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  // The window scrolls (the header is sticky over it): a new page starts at
+  // its top, and back / forward return to where the reader was.
+  scrollBehavior: (to, from, saved) => saved ?? (to.path === from.path ? false : { top: 0 }),
   routes: [
     { path: "/", component: () => import("./pages/HomePage.vue") },
     { path: "/new", component: () => import("./pages/NewNotePage.vue"), meta: { auth: true } },

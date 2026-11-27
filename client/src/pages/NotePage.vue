@@ -110,82 +110,127 @@ const formattedDate = computed(() =>
     ? new Date(noteMeta.value.updated_at).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })
     : "",
 );
+
+// The folder path as a breadcrumb over the title.
+const crumbs = computed(() => noteMeta.value?.folder?.split("/").filter(Boolean) ?? []);
+
+// Who can read it, said under the title — the same three tiers the editor
+// offers, in its words.
+const VISIBILITY = {
+  PRIVATE: { label: "Private", icon: "i-lucide-lock", color: "neutral" },
+  PROTECTED: { label: "Protected", icon: "i-lucide-users", color: "neutral" },
+  PUBLIC: { label: "Public", icon: "i-lucide-globe", color: "primary" },
+} as const;
+const tier = computed(() => (noteMeta.value ? VISIBILITY[noteMeta.value.visibility] : null));
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4" :class="editing ? 'pt-4 pb-2 h-full overflow-hidden' : 'pb-4'">
+  <!-- Reading is a column; the editor takes the width, for its preview. -->
+  <div :class="editing ? '' : 'mx-auto max-w-3xl'">
     <!-- Edit mode -->
-    <template v-if="editing">
-      <NoteForm
-        v-model:title="title"
-        v-model:folder="folder"
-        v-model:description="description"
-        v-model:content="content"
-        v-model:visibility="visibility"
-        v-model:shared="isShared"
-        :saving="saving"
-        submit-label="Save"
-        @submit="onSave"
-        @cancel="editing = false"
-      />
-    </template>
+    <NoteForm
+      v-if="editing"
+      v-model:title="title"
+      v-model:folder="folder"
+      v-model:description="description"
+      v-model:content="content"
+      v-model:visibility="visibility"
+      v-model:shared="isShared"
+      :saving="saving"
+      submit-label="Save"
+      @submit="onSave"
+      @cancel="editing = false"
+    />
 
     <!-- View mode -->
     <template v-else-if="loaded">
-      <div v-if="!noteMeta" class="text-sm text-muted pt-6">Note not found.</div>
-      <template v-else>
-        <!-- Title row, sticky to the scroll container. Copy-link shows when the
-             URL works for others (PUBLIC / shared); Edit/Delete are
-             auth-gated. -->
-        <div
-          class="sticky top-0 z-10 bg-default -mx-4 px-4 py-3 mb-4 flex items-start justify-between gap-3 border-b border-default/60"
-        >
-          <h1 class="text-2xl font-bold leading-tight min-w-0 flex-1">{{ noteMeta.title }}</h1>
-          <div class="flex gap-1 shrink-0">
-            <UButton
-              v-if="shareable"
-              icon="i-lucide-link"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              aria-label="Copy link"
-              @click="copyLink"
-            />
-            <template v-if="loggedIn">
-              <UButton
-                icon="i-lucide-pencil"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                aria-label="Edit note"
-                :loading="loadingEdit"
-                @click="startEdit"
-              />
-              <UButton
-                icon="i-lucide-trash-2"
-                variant="ghost"
-                color="error"
-                size="sm"
-                aria-label="Delete note"
-                @click="deleteNote"
-              />
+      <div v-if="!noteMeta" class="surface flex flex-col items-center gap-3 px-6 py-16 text-center">
+        <UIcon name="i-lucide-file-question" class="size-10 text-dimmed" />
+        <p class="text-lg font-extrabold text-highlighted">Note not found.</p>
+        <p class="max-w-xs text-sm text-muted">It may have been deleted, or it is not shared with you.</p>
+        <UButton to="/" icon="i-lucide-arrow-left" label="Back to the graph" color="neutral" variant="soft" class="mt-2" />
+      </div>
+
+      <article v-else>
+        <header class="mb-4 px-1 sm:mb-5">
+          <nav
+            v-if="crumbs.length"
+            class="mb-1.5 flex flex-wrap items-center gap-1 text-sm font-bold text-muted"
+            aria-label="Folder"
+          >
+            <UIcon name="i-lucide-folder" class="size-4 text-dimmed" />
+            <template v-for="(part, i) in crumbs" :key="i">
+              <UIcon v-if="i" name="i-lucide-chevron-right" class="size-3.5 text-dimmed" />
+              <span>{{ part }}</span>
             </template>
+          </nav>
+
+          <div class="flex items-start gap-3">
+            <h1 class="min-w-0 flex-1 text-2xl leading-tight font-black tracking-tight text-highlighted sm:text-[2rem]">
+              {{ noteMeta.title }}
+            </h1>
+            <div class="flex shrink-0 gap-1 pt-0.5">
+              <UButton
+                v-if="shareable"
+                icon="i-lucide-link"
+                variant="soft"
+                color="neutral"
+                aria-label="Copy link"
+                @click="copyLink"
+              />
+              <template v-if="loggedIn">
+                <UButton
+                  icon="i-lucide-pencil"
+                  variant="soft"
+                  color="neutral"
+                  aria-label="Edit note"
+                  :loading="loadingEdit"
+                  @click="startEdit"
+                />
+                <UButton icon="i-lucide-trash-2" variant="soft" color="error" aria-label="Delete note" @click="deleteNote" />
+              </template>
+            </div>
           </div>
+
+          <div class="mt-2.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+            <UBadge
+              v-if="tier"
+              :icon="tier.icon"
+              :label="tier.label"
+              :color="tier.color"
+              variant="soft"
+              class="font-bold"
+            />
+            <UBadge
+              v-if="noteMeta.is_shared && noteMeta.visibility !== 'PUBLIC'"
+              icon="i-lucide-link"
+              label="Shared link"
+              color="neutral"
+              variant="soft"
+              class="font-bold"
+            />
+            <span>Updated {{ formattedDate }}</span>
+          </div>
+
+          <p v-if="noteMeta.description" class="mt-3 text-base leading-relaxed text-toned">
+            {{ noteMeta.description }}
+          </p>
+        </header>
+
+        <div class="surface px-5 pt-3 pb-6 sm:px-9 sm:pt-4 sm:pb-8">
+          <NoteContent
+            :id="id"
+            :key="noteMeta.updated_at"
+            :content="noteMeta.content"
+            :updated-at="noteMeta.updated_at"
+            :title="noteMeta.title"
+          />
         </div>
-
-        <p v-if="noteMeta.folder" class="text-xs text-muted mb-1 flex items-center gap-1">
-          <UIcon name="i-lucide-folder" class="size-3" />
-          {{ noteMeta.folder }}
-        </p>
-        <p class="text-xs text-muted mb-6">Last updated: {{ formattedDate }}</p>
-
-        <NoteContent
-          :id="id"
-          :key="noteMeta.updated_at"
-          :content="noteMeta.content"
-          :updated-at="noteMeta.updated_at"
-        />
-      </template>
+      </article>
     </template>
+
+    <div v-else class="grid place-items-center py-24" aria-busy="true">
+      <span class="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
   </div>
 </template>

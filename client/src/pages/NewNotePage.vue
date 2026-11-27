@@ -38,7 +38,7 @@ async function save() {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4 pt-4 pb-2 h-full overflow-hidden">
+  <div>
     <NoteForm
       v-model:title="title"
       v-model:folder="folder"

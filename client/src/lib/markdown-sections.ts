@@ -64,3 +64,22 @@ export function buildSectionTree<T>(children: readonly T[]): SectionTree<T> {
 
   return { lead, sections };
 }
+
+/**
+ * Whether a heading only repeats the note's title: a top-level heading whose
+ * text, markers and emphasis aside, is the title. The note page shows the
+ * title itself, so a note that opens with `# <its title>` would say it twice.
+ */
+export function repeatsTitle(heading: unknown, title: string): boolean {
+  const h = heading as { type?: unknown; tag?: unknown; depth?: unknown; text?: unknown };
+  if (headingLevel(heading) !== 1 || typeof h.text !== "string") return false;
+  const plain = (s: string) =>
+    s
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/[*_`~]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  const text = plain(h.text);
+  return text !== "" && text === plain(title);
+}

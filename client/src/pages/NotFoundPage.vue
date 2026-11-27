@@ -8,11 +8,9 @@ setHead({ title: "Page not found", robots: "noindex, nofollow" });
 </script>
 
 <template>
-  <div class="grid h-full place-items-center px-4">
-    <div class="flex flex-col items-center gap-3 text-center">
-      <p class="text-5xl font-bold text-highlighted">404</p>
-      <p class="text-sm text-muted">Page not found</p>
-      <UButton to="/" icon="i-lucide-arrow-left" label="Go back home" size="sm" color="primary" variant="soft" />
-    </div>
+  <div class="surface mx-auto flex max-w-xl flex-col items-center gap-3 px-6 py-16 text-center">
+    <p class="text-6xl font-black tracking-tight text-highlighted">404</p>
+    <p class="text-lg font-extrabold text-highlighted">Page not found</p>
+    <UButton to="/" icon="i-lucide-arrow-left" label="Back to the graph" color="neutral" variant="soft" class="mt-2" />
   </div>
 </template>

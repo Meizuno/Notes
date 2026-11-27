@@ -61,6 +61,11 @@ In short:
   without a test for what it lets through.
 - Use Nuxt UI components and Tailwind classes. There is no Nuxt here: no
   `useFetch`, `useState`, auto-imported `$fetch`, or `#app`.
+- **The look is the family's, Forma's, in violet.** That means Nunito, slate
+  neutrals, pill buttons, `.surface` cards over the gradient wash, and
+  `font-black` titles. The theme lives in two places: the `ui:` block in
+  `vite.config.ts` and the top of `assets/main.css`. Markdown's look is the
+  `PROSE` table in `lib/prose.ts`. Reuse these; don't add one-off colours.
 - `index.html` carries the markers the server's SEO module rewrites:
   `<!--notes:head-->…<!--/notes:head-->` and `<!--notes:app-->`. Keep them.
 

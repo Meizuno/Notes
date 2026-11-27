@@ -92,6 +92,14 @@ function radius(n: Node) {
 const LABEL_ZOOM_MIN = 0.8; // at/below this k, labels are hidden
 const LABEL_ZOOM_MAX = 1.7; // at/above this k, labels are fully shown
 const LABEL_MID_BUMP = 1.0; // lifts the mid-zoom opacity (0 at both ends, +BUMP/4 at the centre)
+// Folder labels are the map's landmarks and always show; so does every label
+// around the node under the pointer. The rest fade in with the zoom.
+function nodeLabelOpacity(n: Node): number {
+  if (n.type === "folder") return 1;
+  if (neighbours.value?.has(n.id)) return 1;
+  return labelOpacity();
+}
+
 function labelOpacity(): number {
   const z = Math.min(1, Math.max(0, (transform.k - LABEL_ZOOM_MIN) / (LABEL_ZOOM_MAX - LABEL_ZOOM_MIN)));
   // Concave bump: same 0 and 1 endpoints, but the middle of the zoom range gets
@@ -237,6 +245,32 @@ function fitToViewport() {
   transform.x = width.value / 2 - cx * k;
   transform.y = height.value / 2 - cy * k;
 }
+
+// The zoom buttons: around the middle of the view, or back to everything.
+function zoomBy(factor: number) {
+  userInteracted.value = true;
+  const newK = Math.min(8, Math.max(0.2, transform.k * factor));
+  const mx = width.value / 2;
+  const my = height.value / 2;
+  transform.x = mx - (mx - transform.x) * (newK / transform.k);
+  transform.y = my - (my - transform.y) * (newK / transform.k);
+  transform.k = newK;
+}
+
+function refit() {
+  userInteracted.value = false;
+  fitToViewport();
+}
+
+// The legend: each top-level folder in its colour, as the nodes wear it.
+const legend = computed(() => {
+  const seen = new Map<string, string>();
+  for (const n of nodes.value) {
+    const top = topFolder(n);
+    if (top && !seen.has(top)) seen.set(top, nodeFill(n));
+  }
+  return [...seen].map(([name, color]) => ({ name, color })).sort((a, b) => a.name.localeCompare(b.name));
+});
 
 function onWheel(e: WheelEvent) {
   e.preventDefault();
@@ -473,15 +507,41 @@ onBeforeUnmount(() => {
             text-anchor="middle"
             class="label"
             :class="{ 'label-folder': n.type === 'folder' }"
-            :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px`, '--label-opacity': labelOpacity() }"
+            :style="{ fontSize: `${Math.max(10, 12 / transform.k)}px`, '--label-opacity': nodeLabelOpacity(n) }"
           >{{ displayTitle(n.title) }}</text>
         </g>
       </g>
     </svg>
 
+    <ul
+      v-if="legend.length"
+      class="pointer-events-none absolute top-3 left-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1.5"
+      aria-label="Folders"
+    >
+      <li
+        v-for="item in legend"
+        :key="item.name"
+        class="flex items-center gap-1.5 rounded-full bg-default/80 px-2.5 py-1 text-xs font-bold text-toned shadow-[0_4px_12px_-8px_rgb(30_60_90/0.4)] backdrop-blur dark:bg-elevated/80 dark:shadow-none"
+      >
+        <span class="size-2 rounded-full" :style="{ background: item.color }" />
+        {{ item.name }}
+      </li>
+    </ul>
+
+    <div
+      v-if="nodes.length"
+      class="absolute right-3 bottom-3 flex flex-col gap-0.5 rounded-full bg-default/85 p-1 shadow-[0_6px_18px_-10px_rgb(30_60_90/0.45)] backdrop-blur dark:bg-elevated/85 dark:shadow-none dark:ring-1 dark:ring-white/6"
+      @pointerdown.stop
+      @wheel.stop
+    >
+      <UButton icon="i-lucide-plus" variant="ghost" color="neutral" size="sm" aria-label="Zoom in" @click="zoomBy(1.3)" />
+      <UButton icon="i-lucide-minus" variant="ghost" color="neutral" size="sm" aria-label="Zoom out" @click="zoomBy(1 / 1.3)" />
+      <UButton icon="i-lucide-maximize" variant="ghost" color="neutral" size="sm" aria-label="Fit the graph" @click="refit" />
+    </div>
+
     <div v-if="loaded && !nodes.length" class="absolute inset-0 grid place-items-center">
       <div class="flex flex-col items-center gap-3 text-center px-4">
-        <UIcon name="i-lucide-network" class="size-10 text-muted" />
+        <UIcon name="i-lucide-network" class="size-10 text-dimmed" />
         <p class="text-sm text-muted">No notes yet</p>
         <UButton to="/new" icon="i-lucide-plus" label="Create your first note" size="sm" color="primary" />
       </div>
@@ -494,7 +554,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: var(--ui-bg);
+  background-color: transparent;
   cursor: grab;
   overflow: hidden;
   user-select: none;
@@ -531,7 +591,8 @@ html:not(.dark) .edge {
 }
 
 .label {
-  fill: var(--ui-text);
+  fill: var(--ui-text-toned);
+  font-weight: 600;
   pointer-events: none;
   paint-order: stroke;
   stroke: var(--ui-bg);
@@ -543,8 +604,8 @@ html:not(.dark) .edge {
   transition: opacity 200ms ease-out;
 }
 .label-folder {
-  font-weight: 600;
-  fill: var(--ui-text-muted);
+  font-weight: 800;
+  fill: var(--ui-text-highlighted);
 }
 
 .node-faded .node,

@@ -1,21 +1,18 @@
 <script setup lang="ts">
-// App navigation sidebar — the vault folder tree, available on every page.
-// Pinned visible on large screens (lg:static, always translated in); on small
-// screens it's an off-canvas drawer toggled by the header menu button
-// (useSidebar) and dismissed by the backdrop or by navigating. Positioned
-// absolutely inside the shell's content row, so on small screens it overlays
-// the page below the header rather than covering the whole viewport.
+// The navigation — search and the folder tree — on every page. On large
+// screens a card that stays put beside the page (Forma's sticky aside); on
+// small ones a slide-over from the left, opened from the header and closed by
+// navigating.
 import { watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { useSidebar } from "../composables/useSidebar";
-import HomeTreeView from "./HomeTreeView.vue";
+import BrandMark from "./BrandMark.vue";
+import VaultNav from "./VaultNav.vue";
 
 const { open, close } = useSidebar();
 const route = useRoute();
 
-// Navigating (e.g. tapping a note in the tree) closes the drawer on small
-// screens; harmless on large where the sidebar stays put regardless.
 watch(
   () => route.fullPath,
   () => close(),
@@ -23,13 +20,32 @@ watch(
 </script>
 
 <template>
-  <!-- Backdrop: small screens only, while the drawer is open. -->
-  <div v-if="open" class="absolute inset-0 z-30 bg-black/40 lg:hidden" aria-hidden="true" @click="close" />
-
-  <aside
-    class="absolute lg:static inset-y-0 left-0 z-40 w-72 shrink-0 overflow-y-auto bg-default dark:bg-[#3D4452] border-r border-default transition-transform duration-200 lg:translate-x-0"
-    :class="open ? 'translate-x-0' : '-translate-x-full'"
-  >
-    <HomeTreeView />
+  <aside class="hidden lg:sticky lg:top-[calc(var(--app-header)+1.5rem)] lg:block lg:self-start" aria-label="Notes">
+    <div class="surface h-[calc(100dvh-var(--app-header)-3rem)] overflow-hidden">
+      <VaultNav />
+    </div>
   </aside>
+
+  <USlideover
+    v-model:open="open"
+    side="left"
+    title="Notes"
+    description="Search and browse the vault"
+    :ui="{
+      content: 'max-w-[21rem] rounded-e-[1.75rem]',
+      header: 'min-h-0 border-0 px-4 pt-4 pb-0 sm:px-4',
+      description: 'sr-only',
+      body: 'p-0 sm:p-0',
+    }"
+  >
+    <template #title>
+      <span class="flex items-center gap-2">
+        <BrandMark class="size-6" />
+        <span class="font-black tracking-tight text-highlighted">Notes</span>
+      </span>
+    </template>
+    <template #body>
+      <VaultNav />
+    </template>
+  </USlideover>
 </template>
