@@ -132,39 +132,38 @@ const getKey = (item: TreeItem) => item.value;
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto">
-    <div class="max-w-3xl mx-auto px-4 py-4">
-      <div class="mb-2 flex items-center gap-2 text-sm">
-        <span v-if="notes" class="text-muted">{{ count }} note{{ count === 1 ? "" : "s" }}</span>
-        <UButton
-          v-if="expanded.length > 0"
-          icon="i-lucide-chevrons-down-up"
-          variant="ghost"
-          color="neutral"
-          size="xs"
-          class="ml-auto"
-          label="Collapse all"
-          @click="collapseAll"
-        />
-      </div>
-
-      <UTree
-        v-if="items.length"
-        v-model="selected"
-        v-model:expanded="expanded"
-        :items="items"
-        :get-key="getKey"
-        size="md"
-        color="primary"
+  <div class="px-1">
+    <div class="mb-1 flex min-h-8 items-center gap-2 px-1.5">
+      <span v-if="notes" class="text-xs font-extrabold uppercase tracking-wide text-muted">
+        {{ count }} note{{ count === 1 ? "" : "s" }}
+      </span>
+      <UButton
+        v-if="expanded.length > 0"
+        icon="i-lucide-chevrons-down-up"
+        variant="ghost"
+        color="neutral"
+        size="xs"
+        class="ml-auto"
+        aria-label="Collapse all folders"
+        @click="collapseAll"
       />
+    </div>
 
-      <div v-else-if="notes" class="grid place-items-center py-20">
-        <div class="flex flex-col items-center gap-3 text-center">
-          <UIcon name="i-lucide-folder-tree" class="size-10 text-muted" />
-          <p class="text-sm text-muted">No notes yet</p>
-          <UButton to="/new" icon="i-lucide-plus" label="Create your first note" size="sm" color="primary" />
-        </div>
-      </div>
+    <UTree
+      v-if="items.length"
+      v-model="selected"
+      v-model:expanded="expanded"
+      :items="items"
+      :get-key="getKey"
+      size="md"
+      color="primary"
+      :ui="{ link: 'rounded-xl font-semibold', linkLeadingIcon: 'text-dimmed' }"
+    />
+
+    <div v-else-if="notes" class="flex flex-col items-center gap-3 px-4 py-14 text-center">
+      <UIcon name="i-lucide-folder-tree" class="size-9 text-dimmed" />
+      <p class="text-sm text-muted">No notes yet</p>
+      <UButton to="/new" icon="i-lucide-plus" label="Create your first note" size="sm" color="primary" />
     </div>
   </div>
 </template>

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useToast } from "@nuxt/ui/composables";
-import { ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
 
-import AppFooter from "./components/AppFooter.vue";
 import AppHeader from "./components/AppHeader.vue";
 import AppSidebar from "./components/AppSidebar.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import DevSignIn from "./components/DevSignIn.vue";
 import RouteAnnouncer from "./components/RouteAnnouncer.vue";
+import { useSearch } from "./composables/useSearch";
+import { useSidebar } from "./composables/useSidebar";
 
 const route = useRoute();
 const router = useRouter();
@@ -33,35 +34,40 @@ watch(
   { immediate: true },
 );
 
-// The page scrolls inside <main>, not the window, so the router's own scroll
-// handling never reaches it: start each page at its top.
-const main = ref<HTMLElement | null>(null);
-watch(
-  () => route.path,
-  () => {
-    if (main.value) main.value.scrollTop = 0;
-  },
-);
+// "/" (or Ctrl/⌘+K) anywhere outside a field jumps to the search box — in the
+// aside on large screens, in the slide-over (opened for it) on small ones.
+const { requestFocus } = useSearch();
+const { open: sidebarOpen } = useSidebar();
+function onShortcut(e: KeyboardEvent) {
+  const target = e.target as HTMLElement | null;
+  const typing = !!target?.closest("input, textarea, select, [contenteditable='true']");
+  const slash = e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey;
+  const palette = e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey);
+  if (!slash && !palette) return;
+  e.preventDefault();
+  if (!window.matchMedia("(min-width: 64rem)").matches) sidebarOpen.value = true;
+  requestFocus();
+}
+onMounted(() => window.addEventListener("keydown", onShortcut));
+onBeforeUnmount(() => window.removeEventListener("keydown", onShortcut));
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="{ position: 'bottom-right' }">
     <RouteAnnouncer />
-    <div class="flex flex-col h-dvh w-full overflow-hidden">
-      <AppHeader />
-      <!-- `relative` anchors the small-screen sidebar drawer + backdrop to the
-           content row (below the header), not the whole viewport. -->
-      <div class="relative flex flex-1 min-h-0">
-        <AppSidebar />
-        <main ref="main" class="flex-1 min-w-0 overflow-auto">
-          <!-- Keyed on the path, as NuxtPage keyed its pages: another note is
-               a fresh page, not the old one with new props. -->
-          <RouterView v-slot="{ Component, route: r }">
-            <component :is="Component" :key="r.path" />
-          </RouterView>
-        </main>
-      </div>
-      <AppFooter />
+    <AppHeader />
+    <!-- Forma's sidebar layout: the page beside a sticky aside from lg up. -->
+    <div
+      class="mx-auto w-full max-w-7xl px-3 pt-4 pb-10 sm:px-6 sm:pt-6 lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:items-start lg:gap-6"
+    >
+      <AppSidebar />
+      <main class="min-w-0">
+        <!-- Keyed on the path, as NuxtPage keyed its pages: another note is
+             a fresh page, not the old one with new props. -->
+        <RouterView v-slot="{ Component, route: r }">
+          <component :is="Component" :key="r.path" />
+        </RouterView>
+      </main>
     </div>
     <ConfirmDialog />
     <DevSignIn />

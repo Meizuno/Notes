@@ -11,12 +11,14 @@ import { computed, inject } from "vue";
 import type { SectionNode } from "../lib/markdown-sections";
 import { NOTE_FOLD_KEY } from "../lib/note-fold";
 
-const props = defineProps<{ section: SectionNode<Token> }>();
+// `headless`: the heading only repeats the note's title, which the page
+// already shows — the section is drawn without it, and so cannot fold.
+const props = defineProps<{ section: SectionNode<Token>; headless?: boolean }>();
 
 // Provided by NoteContent (root of the tree).
 const fold = inject(NOTE_FOLD_KEY)!;
 
-const collapsed = computed(() => fold.isCollapsed(props.section.index));
+const collapsed = computed(() => !props.headless && fold.isCollapsed(props.section.index));
 const headingHtml = computed(() => fold.render([props.section.heading]));
 const blocksHtml = computed(() => fold.render(props.section.blocks));
 
@@ -34,6 +36,7 @@ function onHeadingClick(e: MouseEvent) {
 
 <template>
   <div
+    v-if="!headless"
     class="kb-heading"
     :class="{ 'is-collapsed': collapsed }"
     role="button"

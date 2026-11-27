@@ -16,32 +16,34 @@ import { TASK_ATTR } from "./sanitize";
 // tbody, tr) or MDC's plain one (h5, h6); they are listed with those classes.
 
 export const PROSE = {
-  linkInternal: "text-primary hover:text-primary/80 underline underline-offset-2",
-  linkExternal: "text-orange-500 hover:text-orange-600 underline underline-offset-2",
-  blockquote: "my-2 border-s-4 border-orange-300 dark:border-orange-600 ps-4 italic text-muted",
-  code: "px-1.5 py-0.5 text-sm font-mono bg-muted rounded-md text-highlighted",
-  h1: "text-2xl font-bold mt-4 mb-1.5 text-highlighted",
-  h2: "text-lg font-bold mt-3 mb-1.5 text-highlighted",
-  h3: "text-base font-semibold mt-2 mb-1 text-highlighted",
-  h4: "text-sm font-semibold mt-2 mb-1 text-highlighted",
-  hr: "my-4 border-t border-default",
-  img: "my-2 rounded-md max-w-full",
-  li: "my-0.5 ps-1",
-  ol: "my-1.5 ps-5 list-decimal marker:text-orange-400 marker:font-semibold",
-  p: "my-0 leading-7 text-justify",
-  strong: "font-semibold text-highlighted",
-  ul: "my-1.5 ps-5 list-disc marker:text-orange-400",
+  linkInternal:
+    "font-semibold text-primary underline decoration-primary/35 underline-offset-[3px] hover:decoration-primary",
+  linkExternal:
+    "font-semibold text-primary underline decoration-dotted decoration-primary/45 underline-offset-[3px] hover:decoration-solid hover:decoration-primary",
+  blockquote: "my-4 border-s-2 border-primary/60 ps-4 italic text-toned",
+  code: "rounded-md bg-elevated px-1.5 py-0.5 font-mono text-[0.88em] text-highlighted",
+  h1: "text-[1.6rem] leading-tight font-black tracking-tight mt-8 mb-2 text-highlighted",
+  h2: "text-xl leading-snug font-extrabold tracking-tight mt-7 mb-2 text-highlighted",
+  h3: "text-lg font-bold mt-5 mb-1.5 text-highlighted",
+  h4: "text-base font-bold mt-4 mb-1 text-highlighted",
+  hr: "my-8 border-t border-default",
+  img: "my-4 rounded-2xl max-w-full",
+  li: "my-1 ps-1 leading-relaxed",
+  ol: "my-3 ps-5 list-decimal marker:text-primary marker:font-bold",
+  p: "my-3 leading-relaxed",
+  strong: "font-bold text-highlighted",
+  ul: "my-3 ps-5 list-disc marker:text-primary",
   // prose/pre.global.vue
-  preWrap: "relative my-2 max-w-full min-w-0",
-  copy: "kb-copy absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded-md border border-default bg-default p-1 text-muted",
-  pre: "p-2 sm:p-3 text-sm rounded-lg border border-default bg-muted overflow-x-auto max-w-full min-w-0 whitespace-pre",
+  preWrap: "relative my-4 max-w-full min-w-0",
+  copy: "kb-copy absolute right-2 top-2 z-10 inline-flex items-center justify-center rounded-full bg-default/80 p-1.5 text-muted shadow-sm hover:text-highlighted",
+  pre: "p-3 sm:p-4 text-sm leading-relaxed rounded-2xl border border-default bg-elevated/60 overflow-x-auto max-w-full min-w-0 whitespace-pre",
   // prose/table.global.vue, td, th — and Nuxt UI's thead / tr
-  tableWrap: "my-2 overflow-x-auto rounded-lg border border-default max-w-full min-w-0",
+  tableWrap: "my-4 overflow-x-auto rounded-2xl border border-default max-w-full min-w-0",
   table: "prose-grid-table text-sm",
   thead: "bg-muted",
-  tr: "[&:first-child>th:first-child]:rounded-ss-md [&:first-child>th:last-child]:rounded-se-md [&:last-child>td:first-child]:rounded-es-md [&:last-child>td:last-child]:rounded-ee-md",
-  th: "px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted bg-elevated border-b-2 border-default whitespace-nowrap md:whitespace-normal",
-  td: "px-4 py-2.5 align-top border-t border-default/60 whitespace-nowrap md:whitespace-normal",
+  tr: "[&:first-child>th:first-child]:rounded-ss-2xl [&:first-child>th:last-child]:rounded-se-2xl [&:last-child>td:first-child]:rounded-es-2xl [&:last-child>td:last-child]:rounded-ee-2xl",
+  th: "px-4 py-2.5 text-start text-xs font-extrabold uppercase tracking-wide text-muted bg-elevated border-b border-default whitespace-nowrap md:whitespace-normal",
+  td: "px-4 py-2.5 align-top border-t border-default/60 tabular-nums whitespace-nowrap md:whitespace-normal",
 } as const;
 
 const BY_TAG: Record<string, string> = {

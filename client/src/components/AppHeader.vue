@@ -1,27 +1,26 @@
 <script setup lang="ts">
-// Top header strip — visible at every breakpoint. Brand on the left links to
-// the home view; the right side carries the global "new note" action and the
-// user dropdown for signed-in viewers, and a "Log in" button for anonymous
-// viewers — which goes straight to Google and back to this page.
+// The top bar, Forma's: a sticky strip of frosted glass over the page's wash.
+// Left, the mark and the name (home) and, on small screens, the button that
+// opens the navigation. Right, "New note" and the account chip for somebody
+// signed in, or "Log in" — which goes straight to Google and back here.
 import { computed, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
 import { useAuth } from "../composables/useAuth";
 import { useSidebar } from "../composables/useSidebar";
 import { useVault } from "../composables/useVault";
-import { withBase } from "../lib/base";
 import ApiTokens from "./ApiTokens.vue";
+import BrandMark from "./BrandMark.vue";
 
 const { user, loggedIn, logout, signIn } = useAuth();
 const route = useRoute();
 const { refreshVault } = useVault();
-
-// Toggles the navigation sidebar's off-canvas drawer on small screens (the
-// sidebar is always visible on large, so the button is lg:hidden).
 const { toggle: toggleSidebar } = useSidebar();
 
 const tokensOpen = ref(false);
-const logo = withBase("/favicon.svg");
+
+// The chip shows the first name; the menu carries the whole name and address.
+const firstName = computed(() => (user.value?.name ?? user.value?.email ?? "").split(/[\s@]/)[0] ?? "");
 
 async function signOut() {
   await logout();
@@ -32,9 +31,10 @@ async function signOut() {
 const userMenuItems = computed(() => [
   [
     {
+      type: "label" as const,
       label: user.value?.name ?? user.value?.email ?? "",
+      description: user.value?.name ? (user.value.email ?? undefined) : undefined,
       avatar: { src: user.value?.picture || undefined, alt: user.value?.name ?? undefined },
-      disabled: true,
     },
   ],
   [
@@ -58,69 +58,46 @@ const userMenuItems = computed(() => [
 </script>
 
 <template>
-  <header class="bg-default dark:bg-[#3D4452] border-b border-default shrink-0">
-    <!-- Full-width row: brand always hugs the left; the right cluster
-         (signed-in actions) hugs the right when present, or the brand
-         simply sits alone on the left for anonymous viewers. `min-h`
-         keeps the bar the same height whether or not the (taller)
-         action buttons are present. -->
-    <div class="flex items-center justify-between gap-2 px-4 py-1.5 min-h-11">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <!-- Menu button: opens the nav drawer on small screens only. -->
-        <UButton
-          class="lg:hidden hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 transition-colors"
-          icon="i-lucide-menu"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          aria-label="Toggle navigation"
-          @click="toggleSidebar"
-        />
-        <RouterLink to="/" class="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
-          <img :src="logo" class="w-5 h-5 shrink-0" alt="logo" />
-          <span class="font-semibold text-sm truncate">Notes</span>
-        </RouterLink>
-      </div>
+  <header
+    class="sticky top-0 z-30 border-b border-white/50 bg-white/45 backdrop-blur-xl dark:border-white/5 dark:bg-slate-950/45"
+  >
+    <div class="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6">
+      <UButton
+        class="lg:hidden"
+        icon="i-lucide-panel-left"
+        variant="ghost"
+        color="neutral"
+        aria-label="Toggle navigation"
+        @click="toggleSidebar"
+      />
+      <RouterLink to="/" class="flex min-w-0 items-center gap-2 rounded-full transition-opacity hover:opacity-85">
+        <BrandMark class="size-7" />
+        <span class="truncate text-base font-black tracking-tight text-highlighted sm:text-lg">Notes</span>
+      </RouterLink>
 
-      <div class="flex items-center gap-2">
-        <template v-if="loggedIn">
-          <UButton
-            to="/new"
-            icon="i-lucide-plus"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            label="New"
-            class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
-          />
+      <div class="flex-1" />
 
-          <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-52' }">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="gap-1.5 px-1.5 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
-              aria-label="Account menu"
-            >
-              <UAvatar :src="user?.picture || undefined" :alt="user?.name ?? undefined" size="2xs" />
-              <UIcon name="i-lucide-chevron-down" class="size-3 text-muted" />
-            </UButton>
-          </UDropdownMenu>
+      <template v-if="loggedIn">
+        <UButton to="/new" icon="i-lucide-plus" color="primary" aria-label="New note">
+          <span class="hidden sm:inline">New note</span>
+        </UButton>
 
-          <ApiTokens v-model:open="tokensOpen" />
-        </template>
+        <UDropdownMenu :items="userMenuItems" :content="{ align: 'end' }" :ui="{ content: 'w-60' }">
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-full bg-default/80 p-1 shadow-[0_4px_12px_-8px_rgb(30_60_90/0.4)] transition-colors hover:bg-default sm:pr-3 dark:bg-elevated/70 dark:shadow-none dark:ring-1 dark:ring-white/6"
+            aria-label="Account menu"
+          >
+            <UAvatar :src="user?.picture || undefined" :alt="user?.name ?? user?.email ?? undefined" size="sm" />
+            <span class="hidden max-w-32 truncate text-sm font-bold text-highlighted sm:block">{{ firstName }}</span>
+            <UIcon name="i-lucide-chevron-down" class="hidden size-4 text-muted sm:block" />
+          </button>
+        </UDropdownMenu>
 
-        <UButton
-          v-else
-          icon="i-lucide-log-in"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          label="Log in"
-          class="hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary transition-colors"
-          @click="signIn(route.fullPath)"
-        />
-      </div>
+        <ApiTokens v-model:open="tokensOpen" />
+      </template>
+
+      <UButton v-else icon="i-lucide-log-in" label="Log in" color="primary" @click="signIn(route.fullPath)" />
     </div>
   </header>
 </template>

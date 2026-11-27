@@ -15,7 +15,7 @@ import { useRouter } from "vue-router";
 import { useHighlight } from "../composables/useHighlight";
 import { api } from "../lib/api";
 import { lexMarkdown, renderTokens, setTaskChecked } from "../lib/markdown";
-import { buildSectionTree } from "../lib/markdown-sections";
+import { buildSectionTree, repeatsTitle } from "../lib/markdown-sections";
 import { getCollapsedIndices, toggleHeadingCollapsed, toggleNthTask } from "../lib/markdown-source";
 import { NOTE_FOLD_KEY, type NoteFoldApi } from "../lib/note-fold";
 import { handleProseClick } from "../lib/prose";
@@ -23,7 +23,7 @@ import NoteSection from "./NoteSection.vue";
 
 // `updatedAt` mirrors the Nuxt prop: the page keys this component on it, so an
 // edit remounts it and the parse below runs again.
-const props = defineProps<{ id: string; content: string; updatedAt: string }>();
+const props = defineProps<{ id: string; content: string; updatedAt: string; title?: string }>();
 const router = useRouter();
 
 const source = ref(props.content);
@@ -42,6 +42,17 @@ const render = (slice: Token[]) => renderTokens(slice, { highlight: highlight.va
 const leadHtml = computed(() => render(tree.lead));
 
 const collapsedIndices = computed(() => getCollapsedIndices(source.value));
+
+// A note that opens with `# <its title>` (most do) would say its title twice
+// under the page's own. That first heading is dropped from view — unless it
+// is folded, when hiding it would leave its section with no way to open.
+const leadIsBlank = tree.lead.every((block) => block.type === "space");
+const titleSection = computed(() => {
+  const first = tree.sections[0];
+  if (!props.title || !first || !leadIsBlank) return null;
+  if (!repeatsTitle(first.heading, props.title) || collapsedIndices.value.has(first.index)) return null;
+  return first.index;
+});
 
 // Single in-flight PUT so rapid toggles don't race; a failed save doesn't
 // poison later ones (we swallow on the chain).
@@ -96,12 +107,12 @@ function onClick(e: MouseEvent) {
 <template>
   <div
     ref="proseRef"
-    class="prose prose-sm dark:prose-invert max-w-none"
+    class="prose max-w-none text-[1.02rem] text-default"
     @change="onCheckboxChange"
     @click="onClick"
   >
     <div v-if="tree.lead.length" v-html="leadHtml" />
-    <NoteSection v-for="s in tree.sections" :key="s.index" :section="s" />
-    <p v-if="isEmpty" class="text-muted italic text-sm">No content yet. Click edit to add a note.</p>
+    <NoteSection v-for="s in tree.sections" :key="s.index" :section="s" :headless="s.index === titleSection" />
+    <p v-if="isEmpty" class="text-muted italic text-sm">No content yet.</p>
   </div>
 </template>

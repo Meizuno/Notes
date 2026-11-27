@@ -10,7 +10,9 @@ read, create, edit and delete notes.
 
 - **`PRIVATE` notes** are visible and editable only to whoever wrote them.
 - **Folders** are implicit: notes carry slash-separated paths.
-- **Browsing** is a force-directed graph or a folder tree.
+- **Browsing** is a force-directed graph or a folder tree, and **search**
+  across titles and text from the sidebar (`/`).
+- **Writing** is Markdown, with a formatting toolbar and a live preview beside it.
 - **Visibility** is per note: `PRIVATE`, `PROTECTED` or `PUBLIC`. A note can
   also be shared by link.
 - **Public notes** are pre-rendered for search engines.
@@ -27,7 +29,8 @@ self-hosted, multi-user take on it.
   - The official MCP SDK serves `/api/mcp`.
   - markdown-it and nh3 do the sanitized pre-render for crawlers.
 - **Client:** Vue 3, Vite, TypeScript, [@nuxt/ui](https://ui.nuxt.com) v4
-  (through its Vite plugin), Tailwind v4.
+  (through its Vite plugin), Tailwind v4, in the look of the author's other
+  apps.
   - marked and DOMPurify render Markdown, and shiki highlights code.
   - d3-force draws the graph.
 - **Database:** PostgreSQL with `pg_trgm` for search.

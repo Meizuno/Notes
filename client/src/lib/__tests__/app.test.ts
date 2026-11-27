@@ -61,6 +61,9 @@ const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {
   if (url === "/api/notes/tree") return json(200, TREE);
   if (url === "/api/graph") return json(200, GRAPH);
   if (url === `/api/notes/${NOTE.slug}` && method === "GET") return json(200, NOTE);
+  if (url === "/api/notes/titled" && method === "GET") {
+    return json(200, { ...NOTE, slug: "titled", title: "Titled", content: "# Titled\n\nBody text.\n\n## Part" });
+  }
   if (url === `/api/notes/${NOTE.slug}` && method === "PUT") {
     return json(200, { ...NOTE, ...JSON.parse(String(init?.body)) });
   }
@@ -141,8 +144,11 @@ describe("the app", () => {
     await settle();
     const main = root.querySelector("main")!;
     expect(main.querySelector("h1")?.textContent).toBe("First note");
-    expect(main.textContent).toContain("Programming/Languages");
-    expect(main.textContent).toContain("Last updated: February 3, 2026");
+    // The folder as a breadcrumb over the title, who may read it, and when.
+    const crumbs = Array.from(main.querySelectorAll('nav[aria-label="Folder"] span'));
+    expect(crumbs.map((c) => c.textContent?.trim())).toEqual(["Programming", "Languages"]);
+    expect(main.textContent).toContain("Public");
+    expect(main.textContent).toContain("Updated February 3, 2026");
     expect(document.title).toBe("First note");
     expect(document.head.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("index, follow");
 
@@ -179,6 +185,16 @@ describe("the app", () => {
     expect(router.currentRoute.value.path).toBe("/second-note");
     // That one does not exist on the fake server.
     expect(root.querySelector("main")?.textContent).toContain("Note not found.");
+  });
+
+  it("shows a title once when the note opens with it as a heading", async () => {
+    await router.push("/titled");
+    await settle();
+    const main = root.querySelector("main")!;
+    const titles = Array.from(main.querySelectorAll("h1")).map((h) => h.textContent?.trim());
+    expect(titles).toEqual(["Titled"]);
+    expect(main.textContent).toContain("Body text.");
+    expect(Array.from(main.querySelectorAll(".kb-heading")).map((h) => h.textContent?.trim())).toEqual(["Part"]);
   });
 
   it("shows the editor with its preview on /new", async () => {

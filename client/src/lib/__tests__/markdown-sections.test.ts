@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildSectionTree } from "../markdown-sections";
+import { buildSectionTree, repeatsTitle } from "../markdown-sections";
 
 // Minimal stand-ins for MDC AST nodes — only `tag` matters to the transform.
 const h = (level: number, label = "") => ({ tag: `h${level}`, label });
@@ -45,5 +45,22 @@ describe("buildSectionTree", () => {
     expect(tree.sections.map(s => s.level)).toEqual([2, 2]);
     expect(tree.sections[0]!.children).toHaveLength(1);
     expect(tree.sections[1]!.children).toHaveLength(0);
+  });
+});
+
+describe("repeatsTitle", () => {
+  const heading = (depth: number, text: string) => ({ type: "heading", depth, text });
+
+  it("knows a top-level heading that only repeats the title", () => {
+    expect(repeatsTitle(heading(1, "TypeScript"), "TypeScript")).toBe(true);
+    expect(repeatsTitle(heading(1, "  **Type**Script  "), "typescript")).toBe(true);
+    expect(repeatsTitle(heading(1, "TypeScript <!-- collapsed -->"), "TypeScript")).toBe(true);
+  });
+
+  it("leaves every other heading alone", () => {
+    expect(repeatsTitle(heading(2, "TypeScript"), "TypeScript")).toBe(false);
+    expect(repeatsTitle(heading(1, "TypeScript tips"), "TypeScript")).toBe(false);
+    expect(repeatsTitle({ type: "paragraph", text: "TypeScript" }, "TypeScript")).toBe(false);
+    expect(repeatsTitle(heading(1, ""), "")).toBe(false);
   });
 });

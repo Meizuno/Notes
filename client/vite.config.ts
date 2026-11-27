@@ -27,10 +27,53 @@ export default defineConfig({
       // the OS light/dark preference by toggling the `dark` class on <html>,
       // which is all the Nuxt app's color-mode ever did (it had no switch).
       colorMode: false,
-      // The Nuxt app's app.config.ts. main.css then pins the primary shades
-      // to the exact Nord hexes.
+      // The family look of the owner's other apps (Forma's vite.config.ts):
+      // slate neutrals, pill buttons, big soft cards, rounded fields, overlays
+      // above the sticky header. Notes' own hue is violet, its logo's, where
+      // Forma is emerald and English is blue — the glow under a primary button
+      // is that violet (rgb 139 92 246, violet-500).
       ui: {
-        colors: { primary: "sky", neutral: "slate" },
+        colors: { primary: "violet", neutral: "slate" },
+        card: {
+          slots: { root: "rounded-[1.75rem] shadow-(--app-card-shadow) dark:shadow-none" },
+          variants: {
+            variant: {
+              outline: { root: "bg-default ring-0 divide-y divide-default/60 dark:ring-1 dark:ring-white/6" },
+            },
+          },
+        },
+        button: {
+          slots: { base: "rounded-full font-bold" },
+          compoundVariants: [
+            {
+              color: "primary",
+              variant: "solid",
+              class: "shadow-[0_8px_18px_-10px_rgb(139_92_246/0.9)] dark:shadow-none",
+            },
+            {
+              color: "neutral",
+              variant: "soft",
+              class:
+                "bg-default shadow-[0_1px_2px_rgb(30_60_90/0.06),0_6px_14px_-8px_rgb(30_60_90/0.3)] hover:bg-elevated active:bg-elevated focus-visible:bg-elevated disabled:bg-default aria-disabled:bg-default dark:bg-elevated dark:shadow-none dark:hover:bg-accented/70",
+            },
+          ],
+        },
+        input: { slots: { base: "rounded-xl" } },
+        textarea: { slots: { base: "rounded-2xl" } },
+        badge: { slots: { base: "rounded-full" } },
+        kbd: { base: "rounded-md" },
+        modal: {
+          slots: { overlay: "z-50 backdrop-blur-[2px]", content: "z-50", title: "text-lg font-extrabold" },
+          variants: {
+            fullscreen: { false: { content: "rounded-[1.75rem] shadow-2xl ring-0 dark:ring-1 dark:ring-white/8" } },
+          },
+        },
+        slideover: { slots: { overlay: "z-50 backdrop-blur-[2px]", content: "z-50" } },
+        popover: { slots: { content: "z-50 rounded-2xl shadow-xl ring-default/60" } },
+        dropdownMenu: { slots: { content: "z-50 rounded-2xl p-1 shadow-xl ring-default/60", item: "before:rounded-xl" } },
+        tooltip: { slots: { content: "z-50 rounded-lg" } },
+        toast: { slots: { root: "rounded-2xl" } },
+        tree: { slots: { link: "rounded-xl" } },
       },
       // Bundle every icon the source names (`i-lucide-*`, `i-simple-icons-*`)
       // plus Nuxt UI's own, so nothing is fetched from the Iconify API at
