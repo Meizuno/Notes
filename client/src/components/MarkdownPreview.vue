@@ -5,15 +5,22 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { useHighlight } from "../composables/useHighlight";
-import { lexMarkdown, renderTokens } from "../lib/markdown";
+import { lexMarkdownLines, renderTokens, renderTokensWithLines } from "../lib/markdown";
 import { handleProseClick } from "../lib/prose";
 
-const props = defineProps<{ value: string }>();
+// `lines`: mark each block with the source line it starts on, for the editor's
+// preview to scroll with the text (useScrollSync).
+const props = defineProps<{ value: string; lines?: boolean }>();
 const router = useRouter();
 
-const blocks = computed(() => lexMarkdown(props.value));
+const lexed = computed(() => lexMarkdownLines(props.value));
+const blocks = computed(() => lexed.value.tokens);
 const { highlight } = useHighlight(blocks);
-const html = computed(() => renderTokens(blocks.value, { highlight: highlight.value }));
+const html = computed(() =>
+  props.lines
+    ? renderTokensWithLines(blocks.value, lexed.value.lines, { highlight: highlight.value })
+    : renderTokens(blocks.value, { highlight: highlight.value }),
+);
 
 function onClick(e: MouseEvent) {
   handleProseClick(e, (path) => void router.push(path));
