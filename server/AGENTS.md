@@ -170,6 +170,12 @@ The app's own, ported from Forma's `auth/`, Google only:
   means nobody.
 - `NOTES_DEV_LOGIN=true` enables `GET /api/auth/dev?email=` (the allow-list
   still applies). The server refuses to start with it and `CLIENT_DIR` set.
+- **There is no sign-in page.** Signing in is a navigation to
+  `/api/auth/google?return=<local path>` (`sign_in_location()`), straight to
+  Google and back to that path. `/login` survives only as a redirect there,
+  for old links. A failed sign-in lands on `/?auth_error=<code>`, never back
+  into the sign-in: an address off the allow-list would loop through Google's
+  account picker.
 
 The gate has three dependencies: `get_viewer` (public reads), `get_user_id`
 (401 without a session), `get_caller` (an API token or a session — MCP and the

@@ -1,15 +1,37 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { RouterView, useRoute } from "vue-router";
+import { useToast } from "@nuxt/ui/composables";
+import { ref, watch } from "vue";
+import { RouterView, useRoute, useRouter } from "vue-router";
 
 import AppFooter from "./components/AppFooter.vue";
 import AppHeader from "./components/AppHeader.vue";
 import AppSidebar from "./components/AppSidebar.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
+import DevSignIn from "./components/DevSignIn.vue";
 import RouteAnnouncer from "./components/RouteAnnouncer.vue";
 
 const route = useRoute();
-const showShell = computed(() => !route.meta.bare);
+const router = useRouter();
+const toast = useToast();
+
+// A sign-in that failed comes back to the home page with ?auth_error=<code>
+// (there is no sign-in page to show it on): said once, then taken out of the
+// address so a reload does not say it again.
+const SIGN_IN_ERRORS: Record<string, { title: string; description: string }> = {
+  not_allowed: { title: "Not allowed", description: "This e-mail is not allowed here." },
+  auth_failed: { title: "Sign-in failed", description: "Please try again." },
+};
+watch(
+  () => route.query.auth_error,
+  (code) => {
+    if (typeof code !== "string") return;
+    toast.add({ ...(SIGN_IN_ERRORS[code] ?? SIGN_IN_ERRORS.auth_failed!), color: "error", icon: "i-lucide-circle-alert" });
+    const query = { ...route.query };
+    delete query.auth_error;
+    void router.replace({ query });
+  },
+  { immediate: true },
+);
 
 // The page scrolls inside <main>, not the window, so the router's own scroll
 // handling never reaches it: start each page at its top.
@@ -25,7 +47,7 @@ watch(
 <template>
   <UApp>
     <RouteAnnouncer />
-    <div v-if="showShell" class="flex flex-col h-dvh w-full overflow-hidden">
+    <div class="flex flex-col h-dvh w-full overflow-hidden">
       <AppHeader />
       <!-- `relative` anchors the small-screen sidebar drawer + backdrop to the
            content row (below the header), not the whole viewport. -->
@@ -41,7 +63,7 @@ watch(
       </div>
       <AppFooter />
     </div>
-    <RouterView v-else />
     <ConfirmDialog />
+    <DevSignIn />
   </UApp>
 </template>

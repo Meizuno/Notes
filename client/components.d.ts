@@ -16,6 +16,7 @@ declare module 'vue' {
     AppHeader: typeof import('./src/components/AppHeader.vue')['default']
     AppSidebar: typeof import('./src/components/AppSidebar.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
+    DevSignIn: typeof import('./src/components/DevSignIn.vue')['default']
     HomeGraphView: typeof import('./src/components/HomeGraphView.vue')['default']
     HomeTreeView: typeof import('./src/components/HomeTreeView.vue')['default']
     MarkdownPreview: typeof import('./src/components/MarkdownPreview.vue')['default']

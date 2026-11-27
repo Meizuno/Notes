@@ -97,10 +97,18 @@ class TestPageRules:
         ("path", "status", "location"),
         [
             ("/", 200, None),
-            ("/login", 200, None),
+            # No sign-in page: /login and every page that needs a session go
+            # straight to Google, carrying the way back.
+            ("/login", 302, "/api/auth/google?return=/"),
+            ("/login?return=/new", 302, "/api/auth/google?return=/new"),
             ("/some-note", 200, None),
-            ("/new", 302, "/login"),
-            ("/a/b", 302, "/login"),
+            ("/new", 302, "/api/auth/google?return=/new"),
+            (
+                "/new?title=Hello&folder=A/B",
+                302,
+                "/api/auth/google?return=/new%3Ftitle%3DHello%26folder%3DA/B",
+            ),
+            ("/a/b", 302, "/api/auth/google?return=/a/b"),
             ("/notes/my-note?x=1", 301, "/my-note"),
             (
                 "/notes/b5636819-edc4-491c-a492-a4719f332a2c",

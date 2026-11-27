@@ -1,18 +1,17 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import { useAuth } from "./composables/useAuth";
+import { signIn, useAuth } from "./composables/useAuth";
 
-// The Nuxt app's pages/, as routes: the home graph, the login page, the new-note
-// page, and every note at the root by its slug (or uuid). `login` and `new`
-// win over `/:id` by being static; the server never lets a note take either
-// slug.
+// The Nuxt app's pages/, as routes: the home graph, the new-note page, and
+// every note at the root by its slug (or uuid). `new` wins over `/:id` by
+// being static; the server never lets a note take it, nor `login`, which the
+// guard below handles.
 //
 // Each page is its own chunk, as Nuxt split them.
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: "/", component: () => import("./pages/HomePage.vue") },
-    { path: "/login", component: () => import("./pages/LoginPage.vue"), meta: { bare: true } },
     { path: "/new", component: () => import("./pages/NewNotePage.vue"), meta: { auth: true } },
     { path: "/:id", component: () => import("./pages/NotePage.vue") },
     { path: "/:rest(.*)*", component: () => import("./pages/NotFoundPage.vue") },
@@ -21,19 +20,27 @@ const router = createRouter({
 
 declare module "vue-router" {
   interface RouteMeta {
-    /** Drawn without the app shell (header, sidebar, footer). */
-    bare?: boolean;
-    /** Needs a signed-in user; anybody else is sent to /login. */
+    /** Needs a signed-in user; anybody else is sent to sign in first. */
     auth?: boolean;
   }
 }
 
-// The server applies the same two rules to a page load (anonymous on /new →
-// /login, signed in on /login → /); these cover navigating inside the app.
-router.beforeEach((to) => {
+// The server applies the same rules to a page load (anonymous on /new or
+// /login → Google, signed in on /login → /); these cover navigating inside
+// the app, and the dev server, where Vite serves the pages.
+router.beforeEach((to, from) => {
   const { loggedIn } = useAuth();
-  if (to.meta.auth && !loggedIn.value) return "/login";
-  if (to.path === "/login" && loggedIn.value) return "/";
+  if (to.path === "/login") {
+    // Old links and bookmarks: there is no sign-in page any more.
+    if (!loggedIn.value) void signIn(typeof to.query.return === "string" ? to.query.return : "/");
+    return "/";
+  }
+  if (to.meta.auth && !loggedIn.value) {
+    void signIn(to.fullPath);
+    // Stay where they were while the browser leaves for Google; a first load
+    // has nowhere to stay, so home.
+    return from.matched.length ? false : "/";
+  }
   return true;
 });
 

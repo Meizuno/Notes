@@ -63,8 +63,8 @@ docker compose -f compose.dev.yaml exec server python scripts/seed.py   # option
 ```
 
 The client is at http://localhost:5173 and the API at http://localhost:8000.
-Sign in with the dev sign-in on the login page (`dev@example.com`, alice or
-bob); no Google credentials are needed. Behind code-server, see
+"Log in" opens the dev sign-in (`dev@example.com`, alice or bob); no Google
+credentials are needed. In production it goes straight to Google. Behind code-server, see
 [CLAUDE.md](CLAUDE.md#development).
 
 | Task | Command |

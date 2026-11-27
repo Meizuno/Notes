@@ -253,10 +253,40 @@ class TestGoogle:
         assert f"{STATE_COOKIE}={query['state'][0]}" in state_cookie
         assert "path=/api/auth" in state_cookie.lower()
 
-    async def test_start_without_google_configured_goes_back_to_login(self, client):
+    async def test_start_without_google_configured_lands_home_with_an_error(
+        self, client
+    ):
         response = await client.get("/api/auth/google")
-        assert response.headers["location"] == "/login?error=auth_failed"
+        assert response.headers["location"] == "/?auth_error=auth_failed"
         assert (await client.get("/api/auth/config")).json()["google"] is False
+
+    @pytest.mark.parametrize(
+        ("wanted", "landing"),
+        [
+            # The page that sent them, query and all.
+            ("/new?title=Hello&folder=A/B", "/new?title=Hello&folder=A/B"),
+            # Never anywhere else: an open redirect is how phishing gets in.
+            ("//evil.example/", "/"),
+            ("https://evil.example/", "/"),
+        ],
+    )
+    async def test_comes_back_to_the_page_it_started_from(
+        self, make_client, monkeypatch, wanted, landing
+    ):
+        client = await make_client(**GOOGLE)
+        start = await client.get("/api/auth/google", params={"return": wanted})
+        state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
+
+        async def exchange(self, code):
+            return GoogleProfile(sub="g9", email="dev@example.com", email_verified=True)
+
+        monkeypatch.setattr(GoogleOAuthClient, "exchange", exchange)
+        response = await client.get(
+            "/api/auth/callback", params={"state": state, "code": "c"}
+        )
+        assert response.status_code == 302
+        assert response.headers["location"] == landing
+        assert ACCESS_COOKIE in _cookies(response)
 
     async def _callback(self, client, monkeypatch, profile: GoogleProfile):
         async def exchange(self, code):
@@ -284,13 +314,15 @@ class TestGoogle:
         me = (await client.get("/api/auth/me")).json()["user"]
         assert me["id"] == "sso-alice"  # the imported account, by e-mail
 
-    async def test_an_address_off_the_list_goes_back_with_not_allowed(
+    async def test_an_address_off_the_list_lands_home_with_not_allowed(
         self, make_client, monkeypatch, pool
     ):
         client = await make_client(**GOOGLE)
         profile = GoogleProfile(sub="g2", email="eve@example.com", email_verified=True)
         response = await self._callback(client, monkeypatch, profile)
-        assert response.headers["location"] == "/login?error=not_allowed"
+        # Home, never back into the sign-in: that would loop through
+        # Google's account picker.
+        assert response.headers["location"] == "/?auth_error=not_allowed"
         assert ACCESS_COOKIE not in _cookies(response)
         assert await pool.fetchval("SELECT count(*) FROM users") == 0
 
@@ -300,10 +332,10 @@ class TestGoogle:
         response = await client.get(
             "/api/auth/callback", params={"state": "forged", "code": "c"}
         )
-        assert response.headers["location"] == "/login?error=auth_failed"
+        assert response.headers["location"] == "/?auth_error=auth_failed"
 
     async def test_an_unverified_address_is_auth_failed(self, make_client, monkeypatch):
         client = await make_client(**GOOGLE)
         profile = GoogleProfile(sub="g3", email="dev@example.com", email_verified=False)
         response = await self._callback(client, monkeypatch, profile)
-        assert response.headers["location"] == "/login?error=auth_failed"
+        assert response.headers["location"] == "/?auth_error=auth_failed"

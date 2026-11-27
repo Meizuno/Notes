@@ -2,13 +2,15 @@
 
 - `/notes/<key>` → 301 to `/<key>`: notes used to live there, and old links
   and bookmarks (UUIDs included) must keep working — before any sign-in
-  check, so an anonymous visitor on an old link is not sent to /login first.
-- `/new` needs a session: anonymous → 302 /login.
-- `/login` with a session → 302 /.
+  check, so an anonymous visitor on an old link is not sent to sign in first.
+- There is no sign-in page. `/new` needs a session: anonymous → 302 straight
+  to Google (/api/auth/google), back to `/new` afterwards.
+- `/login` stays for old links and bookmarks: anonymous → the same sign-in
+  (back to `?return=`, or home); with a session → 302 /.
 - `/` and every single-segment page (`/<slug>`) load for anybody; what a
   viewer may read is the API's business, and a note they may not see renders
   the client's not-found.
-- Any deeper page: anonymous → 302 /login; signed in → the client with 404.
+- Any deeper page: anonymous → 302 to sign in; signed in → the client with 404.
 - A PUBLIC or shared note's page carries its head and a sanitized copy of its
   content (see seo.py).
 
@@ -26,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import Headers
 from starlette.types import Scope
 
+from notes.auth.api.routes.google import sign_in_location
 from notes.auth.api.security import get_viewer
 from notes.shared.api.dependencies import get_settings
 from notes.shared.api.errors import error_response
@@ -52,7 +55,6 @@ from notes.vault.use_cases.find_published_note import (
 )
 from notes.vault.use_cases.list_pages import ListPagesCommand, ListPagesUseCase
 
-LOGIN_PATH: Final = "/login"
 # Top-level pages that need a session although they look like a note slug.
 # A slug can never be one of these (RESERVED_SLUGS), so `/new` is the editor.
 AUTH_REQUIRED_PAGES: Final = frozenset({"new"})
@@ -207,10 +209,14 @@ def mount_spa(app: FastAPI, client_dir: Path) -> None:
         if path == "login":
             if viewer is not None:
                 return RedirectResponse("/", status_code=302)
-            return HTMLResponse(page.render())
+            back = request.query_params.get("return", "/")
+            return RedirectResponse(sign_in_location(back), status_code=302)
         if len(segments) > 1 or path in AUTH_REQUIRED_PAGES:
             if viewer is None:
-                return RedirectResponse(LOGIN_PATH, status_code=302)
+                here = request.url.path
+                if request.url.query:
+                    here = f"{here}?{request.url.query}"
+                return RedirectResponse(sign_in_location(here), status_code=302)
             if len(segments) > 1:
                 return HTMLResponse(page.render(), status_code=404)
             return HTMLResponse(page.render())
